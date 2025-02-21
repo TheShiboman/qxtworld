@@ -6,16 +6,25 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CSP headers to allow inline styles and WebSocket connections
+// Add CSP headers to allow necessary resources while maintaining security
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:;"
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.stripe.com",
+      "style-src 'self' 'unsafe-inline'",
+      "connect-src 'self' ws: wss: https://*.stripe.com",
+      "img-src 'self' data: blob:",
+      "font-src 'self'",
+      "frame-src 'self' https://*.stripe.com",
+      "base-uri 'self'"
+    ].join("; ")
   );
   next();
 });
 
-// Enable CORS for WebSocket
+// Enable CORS for WebSocket and API requests
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
