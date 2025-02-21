@@ -6,7 +6,8 @@ import { loadStripe } from "@stripe/stripe-js";
 import { apiRequest } from "@/lib/queryClient";
 import { ShoppingCart } from "lucide-react";
 
-const stripePromise = loadStripe(process.env.VITE_STRIPE_PUBLIC_KEY!);
+// Use import.meta.env instead of process.env
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
 
 export default function ShopPage() {
   const [processing, setProcessing] = useState(false);

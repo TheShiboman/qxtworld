@@ -6,29 +6,46 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CSP headers to allow necessary resources while maintaining security
+// Add CSP headers with development-specific rules
 app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.stripe.com",
-      "style-src 'self' 'unsafe-inline'",
-      "connect-src 'self' ws: wss: https://*.stripe.com",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "frame-src 'self' https://*.stripe.com",
-      "base-uri 'self'"
-    ].join("; ")
-  );
+  const isDevelopment = app.get("env") === "development";
+
+  const cspDirectives = isDevelopment
+    ? [
+        // Development CSP - more permissive for Vite, HMR, etc.
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.stripe.com",
+        "style-src 'self' 'unsafe-inline'",
+        "connect-src 'self' ws: wss: https://*.stripe.com",
+        "img-src 'self' data: blob:",
+        "font-src 'self' data:",
+        "frame-src 'self' https://*.stripe.com",
+        "worker-src 'self' blob:",
+        "base-uri 'self'",
+      ]
+    : [
+        // Production CSP - more restrictive
+        "default-src 'self'",
+        "script-src 'self' https://*.stripe.com",
+        "style-src 'self' 'unsafe-inline'",
+        "connect-src 'self' ws: wss: https://*.stripe.com",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "frame-src 'self' https://*.stripe.com",
+        "base-uri 'self'",
+      ];
+
+  res.setHeader("Content-Security-Policy", cspDirectives.join("; "));
   next();
 });
 
 // Enable CORS for WebSocket and API requests
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin || "*";
+  res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   next();
 });
 
