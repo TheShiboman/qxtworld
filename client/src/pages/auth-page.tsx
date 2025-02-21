@@ -31,7 +31,7 @@ export default function AuthPage() {
     defaultValues: {
       username: "",
       password: "",
-      passwordConfirm: "", // Added default value for password confirmation
+      passwordConfirm: "", 
       fullName: "",
       email: "",
       role: "player"
@@ -104,8 +104,7 @@ export default function AuthPage() {
               <TabsContent value="register" className="space-y-4">
                 <Form {...registerForm}>
                   <form onSubmit={registerForm.handleSubmit((data) => {
-                    const { passwordConfirm, ...registerData } = data;
-                    registerMutation.mutate(registerData);
+                    registerMutation.mutate(data);
                   })} className="space-y-4">
                     <FormField
                       control={registerForm.control}

@@ -63,7 +63,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    const user = { ...insertUser, id } as User;
+    const user = {
+      ...insertUser,
+      id,
+      rating: 1500,
+      createdAt: new Date(),
+    } as User;
     this.users.set(id, user);
     return user;
   }
@@ -128,7 +133,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.products.values());
   }
 
-  async listUsers(): Promise<User[]> { // Added listUsers method implementation
+  async listUsers(): Promise<User[]> { 
     return Array.from(this.users.values());
   }
 }
