@@ -51,13 +51,21 @@ export const products = pgTable("products", {
 });
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  fullName: true,
-  email: true,
-  role: true
-});
+export const insertUserSchema = createInsertSchema(users)
+  .pick({
+    username: true,
+    password: true,
+    fullName: true,
+    email: true,
+    role: true
+  })
+  .extend({
+    passwordConfirm: z.string(),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "Passwords do not match",
+    path: ["passwordConfirm"],
+  });
 
 export const insertTournamentSchema = createInsertSchema(tournaments);
 export const insertMatchSchema = createInsertSchema(matches);

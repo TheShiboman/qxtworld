@@ -31,6 +31,7 @@ export default function AuthPage() {
     defaultValues: {
       username: "",
       password: "",
+      passwordConfirm: "", // Added default value for password confirmation
       fullName: "",
       email: "",
       role: "player"
@@ -47,7 +48,7 @@ export default function AuthPage() {
               <h1 className="text-4xl font-bold">QXT World</h1>
             </div>
             <p className="text-xl text-muted-foreground">
-              Welcome to the future of cue sports. Join our digital ecosystem for tournaments, 
+              Welcome to the future of cue sports. Join our digital ecosystem for tournaments,
               live scoring, and professional equipment.
             </p>
           </div>
@@ -102,7 +103,10 @@ export default function AuthPage() {
 
               <TabsContent value="register" className="space-y-4">
                 <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4">
+                  <form onSubmit={registerForm.handleSubmit((data) => {
+                    const { passwordConfirm, ...registerData } = data;
+                    registerMutation.mutate(registerData);
+                  })} className="space-y-4">
                     <FormField
                       control={registerForm.control}
                       name="username"
@@ -122,6 +126,19 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="passwordConfirm"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
