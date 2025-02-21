@@ -16,11 +16,11 @@ export const users = pgTable("users", {
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type").notNull(), // snooker, pool, etc
+  type: text("type").notNull(),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull().default("upcoming"),
-  format: text("format").notNull(), // single elimination, double elimination
+  format: text("format").notNull(),
   participants: integer("participants").notNull(),
   prize: integer("prize").notNull(),
   description: text("description").notNull(),
@@ -50,6 +50,16 @@ export const products = pgTable("products", {
   stock: integer("stock").notNull()
 });
 
+export const predictions = pgTable("predictions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  tournamentId: integer("tournament_id").notNull(),
+  predictedWinnerId: integer("predicted_winner_id").notNull(),
+  points: integer("points").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .pick({
@@ -70,6 +80,11 @@ export const insertUserSchema = createInsertSchema(users)
 export const insertTournamentSchema = createInsertSchema(tournaments);
 export const insertMatchSchema = createInsertSchema(matches);
 export const insertProductSchema = createInsertSchema(products);
+export const insertPredictionSchema = createInsertSchema(predictions).omit({
+  points: true,
+  createdAt: true,
+  updatedAt: true
+});
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -77,3 +92,5 @@ export type User = typeof users.$inferSelect;
 export type Tournament = typeof tournaments.$inferSelect;
 export type Match = typeof matches.$inferSelect;
 export type Product = typeof products.$inferSelect;
+export type Prediction = typeof predictions.$inferSelect;
+export type InsertPrediction = z.infer<typeof insertPredictionSchema>;

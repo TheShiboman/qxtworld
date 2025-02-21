@@ -1,5 +1,5 @@
 import { users, tournaments, matches, products } from "@shared/schema";
-import type { InsertUser, User, Tournament, Match, Product } from "@shared/schema";
+import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -29,6 +29,13 @@ export interface IStorage {
   getProduct(id: number): Promise<Product | undefined>;
   listProducts(): Promise<Product[]>;
 
+  // Prediction operations
+  createPrediction(prediction: InsertPrediction): Promise<Prediction>;
+  getPrediction(id: number): Promise<Prediction | undefined>;
+  getUserPredictions(userId: number): Promise<Prediction[]>;
+  getTournamentPredictions(tournamentId: number): Promise<Prediction[]>;
+  getLeaderboard(tournamentId: number): Promise<Array<{ user: User; points: number }>>;
+
   sessionStore: session.Store;
 }
 
@@ -37,6 +44,7 @@ export class MemStorage implements IStorage {
   private tournaments: Map<number, Tournament>;
   private matches: Map<number, Match>;
   private products: Map<number, Product>;
+  private predictions: Map<number, Prediction>;
   private currentId: number;
   sessionStore: session.Store;
 
@@ -45,6 +53,7 @@ export class MemStorage implements IStorage {
     this.tournaments = new Map();
     this.matches = new Map();
     this.products = new Map();
+    this.predictions = new Map();
     this.currentId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
@@ -133,8 +142,56 @@ export class MemStorage implements IStorage {
     return Array.from(this.products.values());
   }
 
-  async listUsers(): Promise<User[]> { 
+  async listUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+
+  async createPrediction(prediction: InsertPrediction): Promise<Prediction> {
+    const id = this.currentId++;
+    const newPrediction = {
+      ...prediction,
+      id,
+      points: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as Prediction;
+    this.predictions.set(id, newPrediction);
+    return newPrediction;
+  }
+
+  async getPrediction(id: number): Promise<Prediction | undefined> {
+    return this.predictions.get(id);
+  }
+
+  async getUserPredictions(userId: number): Promise<Prediction[]> {
+    return Array.from(this.predictions.values()).filter(
+      (prediction) => prediction.userId === userId
+    );
+  }
+
+  async getTournamentPredictions(tournamentId: number): Promise<Prediction[]> {
+    return Array.from(this.predictions.values()).filter(
+      (prediction) => prediction.tournamentId === tournamentId
+    );
+  }
+
+  async getLeaderboard(tournamentId: number): Promise<Array<{ user: User; points: number }>> {
+    const predictions = await this.getTournamentPredictions(tournamentId);
+    const userPoints = new Map<number, number>();
+
+    for (const prediction of predictions) {
+      const currentPoints = userPoints.get(prediction.userId) || 0;
+      userPoints.set(prediction.userId, currentPoints + prediction.points);
+    }
+
+    const leaderboardEntries = await Promise.all(
+      Array.from(userPoints.entries()).map(async ([userId, points]) => {
+        const user = await this.getUser(userId);
+        return { user: user!, points };
+      })
+    );
+
+    return leaderboardEntries.sort((a, b) => b.points - a.points);
   }
 }
 

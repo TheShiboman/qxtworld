@@ -110,5 +110,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Prediction routes
+  app.post('/api/predictions', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const prediction = await storage.createPrediction({
+      ...req.body,
+      userId: req.user!.id
+    });
+    res.json(prediction);
+  });
+
+  app.get('/api/predictions/user', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const predictions = await storage.getUserPredictions(req.user!.id);
+    res.json(predictions);
+  });
+
+  app.get('/api/tournaments/:id/predictions', async (req, res) => {
+    const predictions = await storage.getTournamentPredictions(parseInt(req.params.id));
+    res.json(predictions);
+  });
+
+  app.get('/api/tournaments/:id/leaderboard', async (req, res) => {
+    const leaderboard = await storage.getLeaderboard(parseInt(req.params.id));
+    res.json(leaderboard);
+  });
+
   return httpServer;
 }

@@ -11,6 +11,7 @@ import { insertTournamentSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Bracket from "@/components/tournaments/bracket";
 import { Trophy, Users, Calendar } from "lucide-react";
+import Predictions from "@/components/tournaments/predictions";
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -163,7 +164,7 @@ export default function TournamentPage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    {new Date(tournament.startDate).toLocaleDateString()} - 
+                    {new Date(tournament.startDate).toLocaleDateString()} -
                     {new Date(tournament.endDate).toLocaleDateString()}
                   </span>
                 </div>
@@ -179,6 +180,9 @@ export default function TournamentPage() {
                     <Bracket tournament={tournament} />
                   </div>
                 )}
+                <div className="mt-8">
+                  <Predictions tournament={tournament} />
+                </div>
               </div>
             </CardContent>
           </Card>
