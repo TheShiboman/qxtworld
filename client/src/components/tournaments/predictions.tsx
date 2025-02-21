@@ -20,15 +20,15 @@ export default function Predictions({ tournament }: PredictionsProps) {
   const { user } = useAuth();
   const [selectedWinnerId, setSelectedWinnerId] = useState<number | null>(null);
 
-  const { data: predictions } = useQuery({
+  const { data: predictions = [] } = useQuery({
     queryKey: [`/api/tournaments/${tournament.id}/predictions`],
   });
 
-  const { data: leaderboard } = useQuery<LeaderboardEntry[]>({
+  const { data: leaderboard = [] } = useQuery<LeaderboardEntry[]>({
     queryKey: [`/api/tournaments/${tournament.id}/leaderboard`],
   });
 
-  const { data: users } = useQuery({
+  const { data: users = [] } = useQuery({
     queryKey: ["/api/users"],
   });
 
@@ -49,7 +49,7 @@ export default function Predictions({ tournament }: PredictionsProps) {
     },
   });
 
-  const userPrediction = predictions?.find(
+  const userPrediction = predictions.find(
     (p: any) => p.userId === user?.id
   );
 
@@ -63,7 +63,7 @@ export default function Predictions({ tournament }: PredictionsProps) {
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                {users?.map((player: User) => (
+                {users.map((player: User) => (
                   <Button
                     key={player.id}
                     variant={selectedWinnerId === player.id ? "default" : "outline"}
@@ -95,7 +95,7 @@ export default function Predictions({ tournament }: PredictionsProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {leaderboard?.map((entry, index) => (
+            {leaderboard.map((entry, index) => (
               <div
                 key={entry.user.id}
                 className="flex items-center justify-between p-4 bg-accent rounded-lg"

@@ -99,12 +99,14 @@ export function setupAuth(app: Express) {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         console.log(`Registration failed: Username ${req.body.username} already exists`);
-        return res.status(400).send("Username already exists");
+        return res.status(400).json({ message: "Username already exists" });
       }
 
+      // Remove passwordConfirm before creating user
+      const { passwordConfirm, ...userData } = req.body;
       const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
+        ...userData,
+        password: await hashPassword(userData.password),
       });
 
       console.log(`User created successfully: ${user.id}`);
