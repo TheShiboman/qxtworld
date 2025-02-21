@@ -84,6 +84,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(products);
   });
 
+  // User routes
+  app.get('/api/users', async (req, res) => {
+    const users = await storage.listUsers();
+    // Remove sensitive information before sending
+    const sanitizedUsers = users.map(({ password, ...user }) => user);
+    res.json(sanitizedUsers);
+  });
+
   // Stripe payment route
   app.post('/api/create-payment-intent', async (req, res) => {
     if (!stripe) {

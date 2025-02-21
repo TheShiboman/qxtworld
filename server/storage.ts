@@ -10,24 +10,25 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+  listUsers(): Promise<User[]>; // Added listUsers method
+
   // Tournament operations
   createTournament(tournament: Tournament): Promise<Tournament>;
   getTournament(id: number): Promise<Tournament | undefined>;
   listTournaments(): Promise<Tournament[]>;
   updateTournament(id: number, data: Partial<Tournament>): Promise<Tournament>;
-  
+
   // Match operations
   createMatch(match: Match): Promise<Match>;
   updateMatch(id: number, data: Partial<Match>): Promise<Match>;
   getMatch(id: number): Promise<Match | undefined>;
   getMatchesByTournament(tournamentId: number): Promise<Match[]>;
-  
+
   // Product operations
   createProduct(product: Product): Promise<Product>;
   getProduct(id: number): Promise<Product | undefined>;
   listProducts(): Promise<Product[]>;
-  
+
   sessionStore: session.Store;
 }
 
@@ -125,6 +126,10 @@ export class MemStorage implements IStorage {
 
   async listProducts(): Promise<Product[]> {
     return Array.from(this.products.values());
+  }
+
+  async listUsers(): Promise<User[]> { // Added listUsers method implementation
+    return Array.from(this.users.values());
   }
 }
 
