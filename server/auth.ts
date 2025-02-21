@@ -41,11 +41,11 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
   };
 
-  app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
@@ -53,102 +53,105 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        console.log(`Attempting login for user: ${username}`);
         const user = await storage.getUserByUsername(username);
-
         if (!user) {
-          console.log(`User not found: ${username}`);
-          return done(null, false);
+          return done(null, false, { message: "Invalid username or password" });
         }
 
         const isValid = await comparePasswords(password, user.password);
-        console.log(`Password validation result: ${isValid}`);
-
         if (!isValid) {
-          return done(null, false);
+          return done(null, false, { message: "Invalid username or password" });
         }
 
         return done(null, user);
       } catch (error) {
-        console.error('Login error:', error);
         return done(error);
       }
     }),
   );
 
   passport.serializeUser((user, done) => {
-    console.log(`Serializing user: ${user.id}`);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      console.log(`Deserializing user: ${id}`);
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (error) {
-      console.error('Deserialization error:', error);
       done(error);
     }
   });
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      console.log('Registration attempt:', { ...req.body, password: '[REDACTED]' });
-
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        console.log(`Registration failed: Username ${req.body.username} already exists`);
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      // Remove passwordConfirm before creating user
       const { passwordConfirm, ...userData } = req.body;
       const user = await storage.createUser({
         ...userData,
         password: await hashPassword(userData.password),
       });
 
-      console.log(`User created successfully: ${user.id}`);
-
       req.login(user, (err) => {
         if (err) {
-          console.error('Login after registration failed:', err);
           return next(err);
         }
-        res.status(201).json(user);
+        // Only send non-sensitive user data
+        const { password, ...safeUser } = user;
+        res.status(201).json(safeUser);
       });
     } catch (error) {
-      console.error('Registration error:', error);
       next(error);
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    console.log('Login successful:', req.user?.id);
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Authentication failed" });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        // Only send non-sensitive user data
+        const { password, ...safeUser } = user;
+        res.json(safeUser);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
-    const userId = req.user?.id;
-    console.log(`Logout request for user: ${userId}`);
-
     req.logout((err) => {
       if (err) {
-        console.error('Logout error:', err);
         return next(err);
       }
-      console.log(`User ${userId} logged out successfully`);
-      res.sendStatus(200);
+      req.session.destroy((err) => {
+        if (err) {
+          return next(err);
+        }
+        res.clearCookie("connect.sid");
+        res.sendStatus(200);
+      });
     });
   });
 
   app.get("/api/user", (req, res) => {
-    console.log('Current user check:', req.user?.id);
     if (!req.isAuthenticated()) {
-      console.log('No authenticated user found');
       return res.sendStatus(401);
     }
-    res.json(req.user);
+    // Only send non-sensitive user data
+    const { password, ...safeUser } = req.user;
+    res.json(safeUser);
   });
 }
