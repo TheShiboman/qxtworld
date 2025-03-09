@@ -3,66 +3,86 @@ import { storage } from "../storage";
 
 export class TournamentService {
   static async generateMatches(tournament: Tournament, participants: User[]): Promise<Match[]> {
-    switch (tournament.format.toLowerCase()) {
-      case 'single elimination':
-        return this.generateSingleEliminationMatches(tournament, participants);
-      case 'round robin':
-        return this.generateRoundRobinMatches(tournament, participants);
-      default:
-        throw new Error(`Unsupported tournament format: ${tournament.format}`);
+    try {
+      console.log(`Generating matches for ${participants.length} participants in ${tournament.format} format`);
+
+      switch (tournament.format.toLowerCase()) {
+        case 'single elimination':
+          return this.generateSingleEliminationMatches(tournament, participants);
+        case 'round robin':
+          return this.generateRoundRobinMatches(tournament, participants);
+        default:
+          throw new Error(`Unsupported tournament format: ${tournament.format}`);
+      }
+    } catch (error) {
+      console.error('Error in generateMatches:', error);
+      throw new Error(`Failed to generate matches: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   private static async generateSingleEliminationMatches(tournament: Tournament, participants: User[]): Promise<Match[]> {
-    const matches: Match[] = [];
-    const rounds = Math.ceil(Math.log2(participants.length));
-    const firstRoundMatches = Math.ceil(participants.length / 2);
-    const totalMatches = Math.pow(2, rounds) - 1;
+    try {
+      const matches: Match[] = [];
+      const rounds = Math.ceil(Math.log2(participants.length));
+      const firstRoundMatches = Math.ceil(participants.length / 2);
+      const totalMatches = Math.pow(2, rounds) - 1;
 
-    // First round matches
-    for (let i = 0; i < participants.length; i += 2) {
-      const player1 = participants[i];
-      const player2 = participants[i + 1];
-      const matchNumber = matches.length + 1;
-      const nextMatchNumber = Math.floor(matchNumber / 2) + firstRoundMatches;
+      console.log(`Single elimination tournament: ${rounds} rounds, ${totalMatches} total matches`);
 
-      matches.push({
-        tournamentId: tournament.id,
-        player1Id: player1?.id ?? 0, // Bye if no player
-        player2Id: player2?.id ?? 0,
-        round: 1,
-        matchNumber: matchNumber,
-        nextMatchNumber: nextMatchNumber <= totalMatches ? nextMatchNumber : 0,
-        status: 'scheduled',
-        startTime: new Date(tournament.startDate),
-        isWinnersBracket: true
-      } as Match);
-    }
-
-    // Create subsequent round matches
-    let currentRoundStartMatch = firstRoundMatches + 1;
-    for (let round = 2; round <= rounds; round++) {
-      const matchesInRound = Math.pow(2, rounds - round);
-      for (let i = 0; i < matchesInRound; i++) {
-        const matchNumber = currentRoundStartMatch + i;
-        const nextMatchNumber = Math.floor(matchNumber / 2) + matchesInRound;
+      // First round matches
+      for (let i = 0; i < participants.length; i += 2) {
+        const player1 = participants[i];
+        const player2 = participants[i + 1];
+        const matchNumber = matches.length + 1;
+        const nextMatchNumber = Math.floor(matchNumber / 2) + firstRoundMatches;
 
         matches.push({
+          id: 0, // This will be set by the database
           tournamentId: tournament.id,
-          player1Id: 0, // To be determined
-          player2Id: 0,
-          round,
+          player1Id: player1?.id ?? 0, // Bye if no player
+          player2Id: player2?.id ?? 0,
+          score1: 0,
+          score2: 0,
+          round: 1,
           matchNumber: matchNumber,
-          nextMatchNumber: round === rounds ? 0 : nextMatchNumber,
+          nextMatchNumber: nextMatchNumber <= totalMatches ? nextMatchNumber : 0,
           status: 'scheduled',
           startTime: new Date(tournament.startDate),
           isWinnersBracket: true
         } as Match);
       }
-      currentRoundStartMatch += matchesInRound;
-    }
 
-    return matches;
+      // Create subsequent round matches
+      let currentRoundStartMatch = firstRoundMatches + 1;
+      for (let round = 2; round <= rounds; round++) {
+        const matchesInRound = Math.pow(2, rounds - round);
+        for (let i = 0; i < matchesInRound; i++) {
+          const matchNumber = currentRoundStartMatch + i;
+          const nextMatchNumber = round === rounds ? 0 : Math.floor(matchNumber / 2) + matchesInRound;
+
+          matches.push({
+            id: 0, // This will be set by the database
+            tournamentId: tournament.id,
+            player1Id: 0, // To be determined
+            player2Id: 0,
+            score1: 0,
+            score2: 0,
+            round,
+            matchNumber: matchNumber,
+            nextMatchNumber,
+            status: 'scheduled',
+            startTime: new Date(tournament.startDate),
+            isWinnersBracket: true
+          } as Match);
+        }
+        currentRoundStartMatch += matchesInRound;
+      }
+
+      return matches;
+    } catch (error) {
+      console.error('Error in generateSingleEliminationMatches:', error);
+      throw new Error(`Failed to generate single elimination matches: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private static async generateRoundRobinMatches(tournament: Tournament, participants: User[]): Promise<Match[]> {
@@ -99,7 +119,11 @@ export class TournamentService {
           matchNumber: matches.length + 1,
           status: 'scheduled',
           startTime: roundStartTime,
-          isWinnersBracket: true
+          isWinnersBracket: true,
+          score1: 0,
+          score2: 0,
+          id: 0 // This will be set by the database
+
         } as Match);
       }
 
@@ -111,63 +135,84 @@ export class TournamentService {
   }
 
   static async startTournament(tournamentId: number): Promise<void> {
-    const tournament = await storage.getTournament(tournamentId);
-    if (!tournament) {
-      throw new Error("Tournament not found");
+    try {
+      console.log(`Starting tournament ${tournamentId}`);
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        throw new Error("Tournament not found");
+      }
+
+      // Get all confirmed participants
+      const registrations = await storage.getTournamentRegistrations(tournamentId);
+      console.log(`Found ${registrations.length} total registrations`);
+
+      const confirmedParticipants = registrations.filter(reg => reg.status === 'confirmed');
+      console.log(`Found ${confirmedParticipants.length} confirmed participants`);
+
+      if (confirmedParticipants.length < 2) {
+        throw new Error("Not enough confirmed participants to start the tournament");
+      }
+
+      // Get all participant details
+      const participants = await Promise.all(
+        confirmedParticipants.map(async reg => {
+          try {
+            return await storage.getUser(reg.userId);
+          } catch (error) {
+            console.error(`Failed to get user ${reg.userId}:`, error);
+            return null;
+          }
+        })
+      );
+
+      // Filter out any null participants
+      const validParticipants = participants.filter((p): p is User => p !== null);
+      console.log(`Found ${validParticipants.length} valid participants`);
+
+      if (validParticipants.length < 2) {
+        throw new Error("Not enough valid participants to start the tournament");
+      }
+
+      // Generate matches based on tournament format
+      console.log(`Generating matches for format: ${tournament.format}`);
+      const matches = await this.generateMatches(tournament, validParticipants);
+
+      if (!matches || matches.length === 0) {
+        throw new Error("Failed to generate matches for the tournament");
+      }
+
+      console.log(`Generated ${matches.length} matches`);
+
+      // Calculate total rounds safely
+      const totalRounds = Math.max(...matches.map(m => m.round));
+      console.log(`Tournament will have ${totalRounds} rounds`);
+
+      // Save matches to database
+      console.log('Saving matches to database...');
+      for (const match of matches) {
+        try {
+          await storage.createMatch(match);
+        } catch (error) {
+          console.error(`Failed to create match:`, error);
+          throw new Error(`Failed to create match: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      // Update tournament status
+      console.log('Updating tournament status...');
+      await storage.updateTournament(tournamentId, {
+        status: 'in_progress',
+        currentRound: 1,
+        totalRounds
+      });
+
+      console.log(`Tournament ${tournamentId} started successfully`);
+    } catch (error) {
+      console.error('Error in startTournament:', error);
+      throw new Error(`Failed to start tournament: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    console.log(`Starting tournament ${tournamentId}`);
-
-    // Get all confirmed participants
-    const registrations = await storage.getTournamentRegistrations(tournamentId);
-    console.log(`Found ${registrations.length} total registrations`);
-
-    const confirmedParticipants = registrations.filter(reg => reg.status === 'confirmed');
-    console.log(`Found ${confirmedParticipants.length} confirmed participants`);
-
-    if (confirmedParticipants.length < 2) {
-      throw new Error("Not enough confirmed participants to start the tournament");
-    }
-
-    const participants = await Promise.all(
-      confirmedParticipants.map(reg => storage.getUser(reg.userId))
-    );
-
-    // Filter out any null participants
-    const validParticipants = participants.filter((p): p is User => p !== null);
-    console.log(`Found ${validParticipants.length} valid participants`);
-
-    // Generate matches based on tournament format
-    console.log(`Generating matches for format: ${tournament.format}`);
-    const matches = await this.generateMatches(tournament, validParticipants);
-
-    if (matches.length === 0) {
-      throw new Error("Failed to generate matches for the tournament");
-    }
-
-    console.log(`Generated ${matches.length} matches`);
-
-    // Calculate total rounds safely
-    const totalRounds = Math.max(...matches.map(m => m.round));
-    console.log(`Tournament will have ${totalRounds} rounds`);
-
-    // Save matches to database
-    console.log('Saving matches to database...');
-    for (const match of matches) {
-      await storage.createMatch(match);
-    }
-
-    // Update tournament status
-    console.log('Updating tournament status...');
-    await storage.updateTournament(tournamentId, {
-      status: 'in_progress',
-      currentRound: 1,
-      totalRounds
-    });
-
-    console.log(`Tournament ${tournamentId} started successfully`);
   }
-
   static async updateMatchResult(matchId: number, score1: number, score2: number): Promise<void> {
     const match = await storage.getMatch(matchId);
     if (!match) {
