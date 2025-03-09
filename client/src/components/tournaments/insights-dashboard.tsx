@@ -3,9 +3,15 @@ import { Tournament, User, Prediction } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Trophy, Medal, TrendingUp } from "lucide-react";
+import { useState } from "react";
 
 interface InsightsDashboardProps {
   tournament: Tournament;
+}
+
+interface LeaderboardEntry {
+  user: User;
+  points: number;
 }
 
 export default function InsightsDashboard({ tournament }: InsightsDashboardProps) {
@@ -13,7 +19,7 @@ export default function InsightsDashboard({ tournament }: InsightsDashboardProps
     queryKey: [`/api/tournaments/${tournament.id}/predictions`],
   });
 
-  const { data: leaderboard = [] } = useQuery<Array<{ user: User; points: number }>>({
+  const { data: leaderboard = [] } = useQuery<LeaderboardEntry[]>({
     queryKey: [`/api/tournaments/${tournament.id}/leaderboard`],
   });
 

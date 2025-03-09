@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function TournamentPage() {
   const { user } = useAuth();
-  const { data: tournaments } = useQuery({
+  const { data: tournaments = [] } = useQuery({
     queryKey: ["/api/tournaments"],
   });
 
@@ -153,7 +153,7 @@ export default function TournamentPage() {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tournaments?.map((tournament: any) => (
+        {tournaments.map((tournament: any) => (
           <Card key={tournament.id} className="lg:col-span-3">
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
@@ -187,15 +187,18 @@ export default function TournamentPage() {
                       Insights
                     </TabsTrigger>
                   </TabsList>
-                  <TabsContent value="bracket">
+
+                  <TabsContent value="bracket" className="pt-4">
                     {tournament.status === "in_progress" && (
                       <Bracket tournament={tournament} />
                     )}
                   </TabsContent>
-                  <TabsContent value="predictions">
+
+                  <TabsContent value="predictions" className="pt-4">
                     <Predictions tournament={tournament} />
                   </TabsContent>
-                  <TabsContent value="insights">
+
+                  <TabsContent value="insights" className="pt-4">
                     <InsightsDashboard tournament={tournament} />
                   </TabsContent>
                 </Tabs>
