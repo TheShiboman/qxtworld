@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertTournamentSchema } from "@shared/schema";
+import { Tournament, insertTournamentSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Bracket from "@/components/tournaments/bracket";
 import { Trophy, Users, Calendar } from "lucide-react";
@@ -16,7 +16,9 @@ import Leaderboard from "@/components/tournaments/leaderboard";
 
 export default function TournamentPage() {
   const { user } = useAuth();
-  const { data: tournaments = [] } = useQuery({
+
+  // Add proper typing to the tournaments query
+  const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
   });
 
@@ -30,14 +32,28 @@ export default function TournamentPage() {
       format: "single elimination",
       participants: 8,
       prize: 1000,
-      description: ""
+      description: "",
+      status: "upcoming",
+      bracket: []
     }
   });
 
   const onSubmit = async (data: any) => {
-    await apiRequest("POST", "/api/tournaments", data);
-    queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+    try {
+      await apiRequest("POST", "/api/tournaments", data);
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+    } catch (error) {
+      console.error("Failed to create tournament:", error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin text-primary">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -152,58 +168,64 @@ export default function TournamentPage() {
       </div>
 
       <div className="space-y-8">
-        {tournaments.map((tournament: any) => (
-          <div key={tournament.id} className="space-y-8">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy className="h-5 w-5 text-primary" />
-                  <CardTitle>{tournament.name}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      {new Date(tournament.startDate).toLocaleDateString()} -
-                      {new Date(tournament.endDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{tournament.participants} participants</span>
-                  </div>
-                  <p className="text-lg font-bold mt-2">
-                    Prize Pool: ${tournament.prize.toLocaleString()}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Leaderboard tournament={tournament} />
-
-            {tournament.status === "in_progress" && (
+        {tournaments.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No tournaments available
+          </div>
+        ) : (
+          tournaments.map((tournament) => (
+            <div key={tournament.id} className="space-y-8">
               <Card>
                 <CardHeader>
-                  <CardTitle>Tournament Bracket</CardTitle>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                    <CardTitle>{tournament.name}</CardTitle>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <Bracket tournament={tournament} />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {new Date(tournament.startDate).toLocaleDateString()} -
+                        {new Date(tournament.endDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{tournament.participants} participants</span>
+                    </div>
+                    <p className="text-lg font-bold mt-2">
+                      Prize Pool: ${tournament.prize.toLocaleString()}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
-            )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Make Your Prediction</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Predictions tournament={tournament} />
-              </CardContent>
-            </Card>
-          </div>
-        ))}
+              <Leaderboard tournament={tournament} />
+
+              {tournament.status === "in_progress" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tournament Bracket</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Bracket tournament={tournament} />
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Make Your Prediction</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Predictions tournament={tournament} />
+                </CardContent>
+              </Card>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
