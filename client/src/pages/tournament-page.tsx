@@ -10,15 +10,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Tournament, insertTournamentSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Bracket from "@/components/tournaments/bracket";
-import { Trophy, Users, Calendar } from "lucide-react";
+import { Trophy, Users, Calendar, Loader2 } from "lucide-react";
 import Predictions from "@/components/tournaments/predictions";
 import Leaderboard from "@/components/tournaments/leaderboard";
 
 export default function TournamentPage() {
   const { user } = useAuth();
 
-  // Add proper typing to the tournaments query
-  const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
+  const { data: tournaments = [], isLoading, error } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
   });
 
@@ -50,7 +49,17 @@ export default function TournamentPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin text-primary">Loading...</div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="text-center text-red-500">
+          Failed to load tournaments. Please try again later.
+        </div>
       </div>
     );
   }

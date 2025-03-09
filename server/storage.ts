@@ -155,22 +155,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLeaderboard(tournamentId: number): Promise<Array<{ user: User; points: number }>> {
-    const tournamentPredictions = await this.getTournamentPredictions(tournamentId);
-    const userPoints = new Map<number, number>();
+    try {
+      const tournamentPredictions = await this.getTournamentPredictions(tournamentId);
+      const userPoints = new Map<number, number>();
 
-    for (const prediction of tournamentPredictions) {
-      const currentPoints = userPoints.get(prediction.userId) || 0;
-      userPoints.set(prediction.userId, currentPoints + prediction.points);
+      for (const prediction of tournamentPredictions) {
+        const currentPoints = userPoints.get(prediction.userId) || 0;
+        userPoints.set(prediction.userId, currentPoints + (prediction.points || 0));
+      }
+
+      const leaderboardEntries = await Promise.all(
+        Array.from(userPoints.entries()).map(async ([userId, points]) => {
+          const user = await this.getUser(userId);
+          if (!user) {
+            // Skip entries where user doesn't exist
+            return null;
+          }
+          return { user, points };
+        })
+      );
+
+      // Filter out null entries and sort by points
+      return leaderboardEntries
+        .filter((entry): entry is { user: User; points: number } => entry !== null)
+        .sort((a, b) => b.points - a.points);
+    } catch (error) {
+      console.error('Error getting leaderboard:', error);
+      return [];
     }
-
-    const leaderboardEntries = await Promise.all(
-      Array.from(userPoints.entries()).map(async ([userId, points]) => {
-        const user = await this.getUser(userId);
-        return { user: user!, points };
-      })
-    );
-
-    return leaderboardEntries.sort((a, b) => b.points - a.points);
   }
 }
 
