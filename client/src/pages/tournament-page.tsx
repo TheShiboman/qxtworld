@@ -152,9 +152,9 @@ export default function TournamentPage() {
         )}
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {tournaments.map((tournament: any) => (
-          <Card key={tournament.id} className="lg:col-span-3">
+          <Card key={tournament.id}>
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="h-5 w-5 text-primary" />
@@ -179,12 +179,14 @@ export default function TournamentPage() {
                 </p>
 
                 <Tabs defaultValue="bracket" className="mt-6">
-                  <TabsList className="mb-4">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
                     <TabsTrigger value="bracket">Bracket</TabsTrigger>
                     <TabsTrigger value="predictions">Predictions</TabsTrigger>
                     <TabsTrigger value="insights">
-                      <BarChart className="h-4 w-4 mr-2" />
-                      Insights
+                      <div className="flex items-center gap-2">
+                        <BarChart className="h-4 w-4" />
+                        Insights
+                      </div>
                     </TabsTrigger>
                   </TabsList>
 
