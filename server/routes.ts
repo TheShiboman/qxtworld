@@ -62,9 +62,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const tournament = await storage.createTournament(req.body);
+      // Validate and parse the request body using the schema
+      const validatedData = insertTournamentSchema.parse(req.body);
+
+      const tournament = await storage.createTournament(validatedData);
       res.json(tournament);
     } catch (error) {
+      console.error("Failed to create tournament:", error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid tournament data", 
+          errors: error.errors 
+        });
+      }
+
       res.status(500).json({ message: "Failed to create tournament" });
     }
   });

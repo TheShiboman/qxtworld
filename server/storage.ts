@@ -84,8 +84,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTournament(tournament: Tournament): Promise<Tournament> {
-    const [created] = await db.insert(tournaments).values(tournament).returning();
-    return created;
+    try {
+      const [created] = await db.insert(tournaments).values({
+        ...tournament,
+        currentParticipants: 0,
+        bracket: []
+      }).returning();
+      return created;
+    } catch (error) {
+      console.error("Database error creating tournament:", error);
+      throw new Error("Failed to create tournament in database");
+    }
   }
 
   async getTournament(id: number): Promise<Tournament | undefined> {
