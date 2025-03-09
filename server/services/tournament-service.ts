@@ -6,8 +6,6 @@ export class TournamentService {
     switch (tournament.format.toLowerCase()) {
       case 'single elimination':
         return this.generateSingleEliminationMatches(tournament, participants);
-      case 'double elimination':
-        return this.generateDoubleEliminationMatches(tournament, participants);
       case 'round robin':
         return this.generateRoundRobinMatches(tournament, participants);
       default:
@@ -18,20 +16,23 @@ export class TournamentService {
   private static async generateSingleEliminationMatches(tournament: Tournament, participants: User[]): Promise<Match[]> {
     const matches: Match[] = [];
     const rounds = Math.ceil(Math.log2(participants.length));
+    const firstRoundMatches = Math.ceil(participants.length / 2);
     const totalMatches = Math.pow(2, rounds) - 1;
-    
+
     // First round matches
     for (let i = 0; i < participants.length; i += 2) {
       const player1 = participants[i];
       const player2 = participants[i + 1];
-      
+      const matchNumber = matches.length + 1;
+      const nextMatchNumber = Math.floor(matchNumber / 2) + firstRoundMatches;
+
       matches.push({
         tournamentId: tournament.id,
         player1Id: player1?.id ?? 0, // Bye if no player
         player2Id: player2?.id ?? 0,
         round: 1,
-        matchNumber: matches.length + 1,
-        nextMatchNumber: Math.floor((matches.length + 1) / 2) + Math.pow(2, rounds - 1),
+        matchNumber: matchNumber,
+        nextMatchNumber: nextMatchNumber <= totalMatches ? nextMatchNumber : 0,
         status: 'scheduled',
         startTime: new Date(tournament.startDate),
         isWinnersBracket: true
@@ -39,21 +40,26 @@ export class TournamentService {
     }
 
     // Create subsequent round matches
+    let currentRoundStartMatch = firstRoundMatches + 1;
     for (let round = 2; round <= rounds; round++) {
       const matchesInRound = Math.pow(2, rounds - round);
       for (let i = 0; i < matchesInRound; i++) {
+        const matchNumber = currentRoundStartMatch + i;
+        const nextMatchNumber = Math.floor(matchNumber / 2) + matchesInRound;
+
         matches.push({
           tournamentId: tournament.id,
           player1Id: 0, // To be determined
           player2Id: 0,
           round,
-          matchNumber: matches.length + 1,
-          nextMatchNumber: round === rounds ? 0 : Math.floor((matches.length + 1) / 2) + Math.pow(2, rounds - round - 1),
+          matchNumber: matchNumber,
+          nextMatchNumber: round === rounds ? 0 : nextMatchNumber,
           status: 'scheduled',
           startTime: new Date(tournament.startDate),
           isWinnersBracket: true
         } as Match);
       }
+      currentRoundStartMatch += matchesInRound;
     }
 
     return matches;
@@ -62,7 +68,7 @@ export class TournamentService {
   private static async generateRoundRobinMatches(tournament: Tournament, participants: User[]): Promise<Match[]> {
     const matches: Match[] = [];
     const n = participants.length;
-    
+
     // For odd number of participants, add a "bye" player
     const players = [...participants];
     if (n % 2 === 1) {
@@ -141,7 +147,7 @@ export class TournamentService {
     }
 
     const winner = score1 > score2 ? match.player1Id : match.player2Id;
-    
+
     // Update match result
     await storage.updateMatch(matchId, {
       score1,
