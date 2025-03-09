@@ -10,8 +10,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertTournamentSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Bracket from "@/components/tournaments/bracket";
-import { Trophy, Users, Calendar } from "lucide-react";
+import { Trophy, Users, Calendar, BarChart } from "lucide-react";
 import Predictions from "@/components/tournaments/predictions";
+import InsightsDashboard from "@/components/tournaments/insights-dashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -152,7 +154,7 @@ export default function TournamentPage() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tournaments?.map((tournament: any) => (
-          <Card key={tournament.id}>
+          <Card key={tournament.id} className="lg:col-span-3">
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="h-5 w-5 text-primary" />
@@ -160,7 +162,7 @@ export default function TournamentPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
@@ -175,14 +177,28 @@ export default function TournamentPage() {
                 <p className="text-lg font-bold mt-2">
                   Prize Pool: ${tournament.prize.toLocaleString()}
                 </p>
-                {tournament.status === "in_progress" && (
-                  <div className="mt-4">
-                    <Bracket tournament={tournament} />
-                  </div>
-                )}
-                <div className="mt-8">
-                  <Predictions tournament={tournament} />
-                </div>
+
+                <Tabs defaultValue="bracket" className="mt-6">
+                  <TabsList>
+                    <TabsTrigger value="bracket">Bracket</TabsTrigger>
+                    <TabsTrigger value="predictions">Predictions</TabsTrigger>
+                    <TabsTrigger value="insights">
+                      <BarChart className="h-4 w-4 mr-2" />
+                      Insights
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="bracket">
+                    {tournament.status === "in_progress" && (
+                      <Bracket tournament={tournament} />
+                    )}
+                  </TabsContent>
+                  <TabsContent value="predictions">
+                    <Predictions tournament={tournament} />
+                  </TabsContent>
+                  <TabsContent value="insights">
+                    <InsightsDashboard tournament={tournament} />
+                  </TabsContent>
+                </Tabs>
               </div>
             </CardContent>
           </Card>
