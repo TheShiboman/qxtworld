@@ -314,29 +314,54 @@ export default function TournamentPage() {
                       <Trophy className="h-5 w-5 text-primary" />
                       <CardTitle>{tournament.name}</CardTitle>
                     </div>
-                    {user?.role === 'player' && (
-                      <div>
-                        {(() => {
-                          const regStatus = getRegistrationStatus(tournament);
-                          return (
-                            <Button
-                              onClick={() => registerMutation.mutate(tournament.id)}
-                              disabled={regStatus.status !== 'open' || registerMutation.isPending}
-                              variant={regStatus.status === 'registered' ? "outline" : "default"}
-                              className={`min-w-[140px] ${
-                                regStatus.status === 'registered' ? 'bg-green-100' : ''
-                              }`}
-                            >
-                              {registerMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                regStatus.label
-                              )}
-                            </Button>
-                          );
-                        })()}
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      {user?.role === 'admin' && tournament.status === 'upcoming' && (
+                        <Button
+                          onClick={async () => {
+                            try {
+                              await apiRequest("POST", `/api/tournaments/${tournament.id}/start`);
+                              queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+                              toast({
+                                title: "Tournament Started",
+                                description: "The tournament has been started and matches have been generated.",
+                              });
+                            } catch (error: any) {
+                              toast({
+                                title: "Error",
+                                description: error.message || "Failed to start tournament",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                          disabled={tournament.currentParticipants < 2}
+                        >
+                          Start Tournament
+                        </Button>
+                      )}
+                      {user?.role === 'player' && (
+                        <div>
+                          {(() => {
+                            const regStatus = getRegistrationStatus(tournament);
+                            return (
+                              <Button
+                                onClick={() => registerMutation.mutate(tournament.id)}
+                                disabled={regStatus.status !== 'open' || registerMutation.isPending}
+                                variant={regStatus.status === 'registered' ? "outline" : "default"}
+                                className={`min-w-[140px] ${
+                                  regStatus.status === 'registered' ? 'bg-green-100' : ''
+                                }`}
+                              >
+                                {registerMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  regStatus.label
+                                )}
+                              </Button>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {tournament.description}
