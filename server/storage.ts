@@ -218,28 +218,32 @@ export class DatabaseStorage implements IStorage {
 
   async createTournamentRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration> {
     try {
-      const [created] = await db
-        .insert(tournamentRegistrations)
-        .values({
-          ...registration,
-          registeredAt: new Date(),
-          updatedAt: new Date()
-        })
-        .returning();
+      // Start a transaction
+      return await db.transaction(async (tx) => {
+        // Create the registration
+        const [created] = await tx
+          .insert(tournamentRegistrations)
+          .values({
+            ...registration,
+            registeredAt: new Date(),
+            updatedAt: new Date()
+          })
+          .returning();
 
-      // Update tournament participant count
-      await db
-        .update(tournaments)
-        .set({
-          currentParticipants: db
-            .select({ count: sql`count(*)::integer` })
-            .from(tournamentRegistrations)
-            .where(eq(tournamentRegistrations.tournamentId, registration.tournamentId))
-            .limit(1)
-        })
-        .where(eq(tournaments.id, registration.tournamentId));
+        // Get the current count with a separate query
+        const [{ count }] = await tx
+          .select({ count: sql`count(*)::int` })
+          .from(tournamentRegistrations)
+          .where(eq(tournamentRegistrations.tournamentId, registration.tournamentId));
 
-      return created;
+        // Update the tournament with the new count
+        await tx
+          .update(tournaments)
+          .set({ currentParticipants: count })
+          .where(eq(tournaments.id, registration.tournamentId));
+
+        return created;
+      });
     } catch (error) {
       console.error("Database error creating tournament registration:", error);
       throw new Error("Failed to register for tournament. Please try again.");
