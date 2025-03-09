@@ -116,9 +116,14 @@ export class TournamentService {
       throw new Error("Tournament not found");
     }
 
+    console.log(`Starting tournament ${tournamentId}`);
+
     // Get all confirmed participants
     const registrations = await storage.getTournamentRegistrations(tournamentId);
+    console.log(`Found ${registrations.length} total registrations`);
+
     const confirmedParticipants = registrations.filter(reg => reg.status === 'confirmed');
+    console.log(`Found ${confirmedParticipants.length} confirmed participants`);
 
     if (confirmedParticipants.length < 2) {
       throw new Error("Not enough confirmed participants to start the tournament");
@@ -130,28 +135,37 @@ export class TournamentService {
 
     // Filter out any null participants
     const validParticipants = participants.filter((p): p is User => p !== null);
+    console.log(`Found ${validParticipants.length} valid participants`);
 
     // Generate matches based on tournament format
+    console.log(`Generating matches for format: ${tournament.format}`);
     const matches = await this.generateMatches(tournament, validParticipants);
 
     if (matches.length === 0) {
       throw new Error("Failed to generate matches for the tournament");
     }
 
+    console.log(`Generated ${matches.length} matches`);
+
     // Calculate total rounds safely
     const totalRounds = Math.max(...matches.map(m => m.round));
+    console.log(`Tournament will have ${totalRounds} rounds`);
 
     // Save matches to database
+    console.log('Saving matches to database...');
     for (const match of matches) {
       await storage.createMatch(match);
     }
 
     // Update tournament status
+    console.log('Updating tournament status...');
     await storage.updateTournament(tournamentId, {
       status: 'in_progress',
       currentRound: 1,
       totalRounds
     });
+
+    console.log(`Tournament ${tournamentId} started successfully`);
   }
 
   static async updateMatchResult(matchId: number, score1: number, score2: number): Promise<void> {

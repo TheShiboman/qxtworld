@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { insertTournamentSchema, insertMatchSchema, insertProductSchema } from "@shared/schema";
 import { TournamentService } from "./services/tournament-service";
+
 // Only initialize Stripe if we have the secret key
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
@@ -293,12 +294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You are already registered for this tournament" });
       }
 
+      console.log(`Creating registration for user ${req.user!.id} in tournament ${tournamentId}`);
       const registration = await storage.createTournamentRegistration({
         tournamentId,
         userId: req.user!.id,
-        status: 'pending'
+        status: 'confirmed' // Changed from 'pending' to 'confirmed'
       });
 
+      console.log(`Registration created successfully:`, registration);
       res.json(registration);
     } catch (error) {
       console.error("Failed to register for tournament:", error);
