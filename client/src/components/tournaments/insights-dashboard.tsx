@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Tournament, User, Prediction } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Trophy, Medal, TrendingUp } from "lucide-react";
 
 interface InsightsDashboardProps {
@@ -9,15 +9,15 @@ interface InsightsDashboardProps {
 }
 
 export default function InsightsDashboard({ tournament }: InsightsDashboardProps) {
-  const { data: predictions = [] } = useQuery({
+  const { data: predictions = [] } = useQuery<Prediction[]>({
     queryKey: [`/api/tournaments/${tournament.id}/predictions`],
   });
 
-  const { data: leaderboard = [] } = useQuery({
+  const { data: leaderboard = [] } = useQuery<Array<{ user: User; points: number }>>({
     queryKey: [`/api/tournaments/${tournament.id}/leaderboard`],
   });
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
@@ -48,24 +48,26 @@ export default function InsightsDashboard({ tournament }: InsightsDashboardProps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full flex items-center justify-center">
-              <PieChart width={300} height={300}>
-                <Pie
-                  data={predictionDistribution}
-                  cx={150}
-                  cy={150}
-                  labelLine={false}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                >
-                  {predictionDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={predictionDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}`}
+                  >
+                    {predictionDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
@@ -80,19 +82,19 @@ export default function InsightsDashboard({ tournament }: InsightsDashboardProps
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
-              <LineChart
-                width={400}
-                height={300}
-                data={pointsOverTime}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="points" stroke="#8884d8" />
-              </LineChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={pointsOverTime}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="points" stroke="#8884d8" />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
