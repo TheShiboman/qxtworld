@@ -10,10 +10,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertTournamentSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Bracket from "@/components/tournaments/bracket";
-import { Trophy, Users, Calendar, BarChart } from "lucide-react";
+import { Trophy, Users, Calendar } from "lucide-react";
 import Predictions from "@/components/tournaments/predictions";
-import InsightsDashboard from "@/components/tournaments/insights-dashboard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Leaderboard from "@/components/tournaments/leaderboard";
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -154,63 +153,56 @@ export default function TournamentPage() {
 
       <div className="space-y-8">
         {tournaments.map((tournament: any) => (
-          <Card key={tournament.id} className="w-full">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                <CardTitle>{tournament.name}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {new Date(tournament.startDate).toLocaleDateString()} -
-                    {new Date(tournament.endDate).toLocaleDateString()}
-                  </span>
+          <div key={tournament.id} className="space-y-8">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="h-5 w-5 text-primary" />
+                  <CardTitle>{tournament.name}</CardTitle>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{tournament.participants} participants</span>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {new Date(tournament.startDate).toLocaleDateString()} -
+                      {new Date(tournament.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{tournament.participants} participants</span>
+                  </div>
+                  <p className="text-lg font-bold mt-2">
+                    Prize Pool: ${tournament.prize.toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-lg font-bold mt-2">
-                  Prize Pool: ${tournament.prize.toLocaleString()}
-                </p>
+              </CardContent>
+            </Card>
 
-                <div className="border-t border-border mt-6 pt-6">
-                  <Tabs defaultValue="insights">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="bracket">Bracket</TabsTrigger>
-                      <TabsTrigger value="predictions">Predictions</TabsTrigger>
-                      <TabsTrigger value="insights" className="flex items-center gap-2">
-                        <BarChart className="h-4 w-4" />
-                        Insights
-                      </TabsTrigger>
-                    </TabsList>
+            <Leaderboard tournament={tournament} />
 
-                    <div className="mt-6">
-                      <TabsContent value="bracket">
-                        {tournament.status === "in_progress" && (
-                          <Bracket tournament={tournament} />
-                        )}
-                      </TabsContent>
+            {tournament.status === "in_progress" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tournament Bracket</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Bracket tournament={tournament} />
+                </CardContent>
+              </Card>
+            )}
 
-                      <TabsContent value="predictions">
-                        <Predictions tournament={tournament} />
-                      </TabsContent>
-
-                      <TabsContent value="insights">
-                        <div className="min-h-[600px]">
-                          <InsightsDashboard tournament={tournament} />
-                        </div>
-                      </TabsContent>
-                    </div>
-                  </Tabs>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Make Your Prediction</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Predictions tournament={tournament} />
+              </CardContent>
+            </Card>
+          </div>
         ))}
       </div>
     </div>
