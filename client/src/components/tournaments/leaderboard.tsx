@@ -7,13 +7,54 @@ interface LeaderboardProps {
   tournament: Tournament;
 }
 
+interface LeaderboardEntry {
+  user: User;
+  points: number;
+}
+
 export default function Leaderboard({ tournament }: LeaderboardProps) {
-  const { data: leaderboard = [] } = useQuery<Array<{ user: User; points: number }>>({
+  const { data: leaderboard = [], isLoading, error } = useQuery<LeaderboardEntry[]>({
     queryKey: [`/api/tournaments/${tournament.id}/leaderboard`],
   });
 
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            Tournament Prediction Leaderboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin text-primary">Loading...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-primary" />
+            Tournament Prediction Leaderboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-muted-foreground py-8">
+            Failed to load leaderboard
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-primary" />
