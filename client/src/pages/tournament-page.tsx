@@ -57,14 +57,14 @@ export default function TournamentPage() {
     defaultValues: {
       name: "",
       type: "snooker",
-      startDate: "",
-      endDate: "",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       format: "single elimination",
       participants: 8,
       prize: 1000,
       description: "",
       status: "upcoming",
-      registrationDeadline: "",
       currentParticipants: 0,
       bracket: []
     }
@@ -74,8 +74,17 @@ export default function TournamentPage() {
     try {
       await apiRequest("POST", "/api/tournaments", data);
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      toast({
+        title: "Success",
+        description: "Tournament created successfully.",
+      });
     } catch (error) {
       console.error("Failed to create tournament:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create tournament. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
