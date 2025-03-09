@@ -152,9 +152,9 @@ export default function TournamentPage() {
         )}
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {tournaments.map((tournament: any) => (
-          <Card key={tournament.id}>
+          <Card key={tournament.id} className="w-full">
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="h-5 w-5 text-primary" />
@@ -178,7 +178,7 @@ export default function TournamentPage() {
                   Prize Pool: ${tournament.prize.toLocaleString()}
                 </p>
 
-                <Tabs defaultValue="bracket" className="mt-6">
+                <Tabs defaultValue="insights" className="mt-6">
                   <TabsList className="grid w-full grid-cols-3 mb-4">
                     <TabsTrigger value="bracket">Bracket</TabsTrigger>
                     <TabsTrigger value="predictions">Predictions</TabsTrigger>
@@ -190,18 +190,20 @@ export default function TournamentPage() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="bracket" className="pt-4">
+                  <TabsContent value="bracket" className="py-4">
                     {tournament.status === "in_progress" && (
                       <Bracket tournament={tournament} />
                     )}
                   </TabsContent>
 
-                  <TabsContent value="predictions" className="pt-4">
+                  <TabsContent value="predictions" className="py-4">
                     <Predictions tournament={tournament} />
                   </TabsContent>
 
-                  <TabsContent value="insights" className="pt-4">
-                    <InsightsDashboard tournament={tournament} />
+                  <TabsContent value="insights" className="py-4">
+                    <div className="min-h-[600px]">
+                      <InsightsDashboard tournament={tournament} />
+                    </div>
                   </TabsContent>
                 </Tabs>
               </div>
