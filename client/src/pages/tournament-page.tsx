@@ -178,34 +178,36 @@ export default function TournamentPage() {
                   Prize Pool: ${tournament.prize.toLocaleString()}
                 </p>
 
-                <Tabs defaultValue="insights" className="mt-6">
-                  <TabsList className="grid w-full grid-cols-3 mb-4">
-                    <TabsTrigger value="bracket">Bracket</TabsTrigger>
-                    <TabsTrigger value="predictions">Predictions</TabsTrigger>
-                    <TabsTrigger value="insights">
-                      <div className="flex items-center gap-2">
+                <div className="border-t border-border mt-6 pt-6">
+                  <Tabs defaultValue="insights">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="bracket">Bracket</TabsTrigger>
+                      <TabsTrigger value="predictions">Predictions</TabsTrigger>
+                      <TabsTrigger value="insights" className="flex items-center gap-2">
                         <BarChart className="h-4 w-4" />
                         Insights
-                      </div>
-                    </TabsTrigger>
-                  </TabsList>
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <TabsContent value="bracket" className="py-4">
-                    {tournament.status === "in_progress" && (
-                      <Bracket tournament={tournament} />
-                    )}
-                  </TabsContent>
+                    <div className="mt-6">
+                      <TabsContent value="bracket">
+                        {tournament.status === "in_progress" && (
+                          <Bracket tournament={tournament} />
+                        )}
+                      </TabsContent>
 
-                  <TabsContent value="predictions" className="py-4">
-                    <Predictions tournament={tournament} />
-                  </TabsContent>
+                      <TabsContent value="predictions">
+                        <Predictions tournament={tournament} />
+                      </TabsContent>
 
-                  <TabsContent value="insights" className="py-4">
-                    <div className="min-h-[600px]">
-                      <InsightsDashboard tournament={tournament} />
+                      <TabsContent value="insights">
+                        <div className="min-h-[600px]">
+                          <InsightsDashboard tournament={tournament} />
+                        </div>
+                      </TabsContent>
                     </div>
-                  </TabsContent>
-                </Tabs>
+                  </Tabs>
+                </div>
               </div>
             </CardContent>
           </Card>
