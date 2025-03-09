@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import { sql } from 'drizzle-orm';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -216,28 +217,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTournamentRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration> {
-    const [created] = await db
-      .insert(tournamentRegistrations)
-      .values({
-        ...registration,
-        registeredAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
+    try {
+      const [created] = await db
+        .insert(tournamentRegistrations)
+        .values({
+          ...registration,
+          registeredAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
 
-    // Update tournament participant count
-    await db
-      .update(tournaments)
-      .set({
-        currentParticipants: db
-          .select()
-          .from(tournamentRegistrations)
-          .where(eq(tournamentRegistrations.tournamentId, registration.tournamentId))
-          .count()
-      })
-      .where(eq(tournaments.id, registration.tournamentId));
+      // Update tournament participant count
+      await db
+        .update(tournaments)
+        .set({
+          currentParticipants: db
+            .select({ count: sql`count(*)::integer` })
+            .from(tournamentRegistrations)
+            .where(eq(tournamentRegistrations.tournamentId, registration.tournamentId))
+            .limit(1)
+        })
+        .where(eq(tournaments.id, registration.tournamentId));
 
-    return created;
+      return created;
+    } catch (error) {
+      console.error("Database error creating tournament registration:", error);
+      throw new Error("Failed to register for tournament. Please try again.");
+    }
   }
 
   async getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]> {

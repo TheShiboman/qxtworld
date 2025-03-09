@@ -219,14 +219,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      // Check if user is already registered
+      const existingRegistrations = await storage.getTournamentRegistrations(tournamentId);
+      const alreadyRegistered = existingRegistrations.some(reg => reg.userId === req.user!.id);
+
+      if (alreadyRegistered) {
+        return res.status(400).json({ message: "You are already registered for this tournament" });
+      }
+
       const registration = await storage.createTournamentRegistration({
         tournamentId,
         userId: req.user!.id,
         status: 'pending'
       });
+
       res.json(registration);
     } catch (error) {
-      res.status(500).json({ message: "Failed to register for tournament" });
+      console.error("Failed to register for tournament:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to register for tournament" });
     }
   });
 
