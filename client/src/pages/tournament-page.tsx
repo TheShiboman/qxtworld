@@ -14,12 +14,42 @@ import { Trophy, Users, Calendar, Loader2 } from "lucide-react";
 import Predictions from "@/components/tournaments/predictions";
 import Leaderboard from "@/components/tournaments/leaderboard";
 import InsightsDashboard from "@/components/tournaments/insights-dashboard";
+import { toast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { TournamentRegistration } from "@shared/schema";
 
 export default function TournamentPage() {
   const { user } = useAuth();
 
   const { data: tournaments = [], isLoading, error } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
+  });
+
+  const { data: userRegistrations = [] } = useQuery<TournamentRegistration[]>({
+    queryKey: ["/api/user/tournaments"],
+    enabled: !!user
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (tournamentId: number) => {
+      const response = await apiRequest("POST", `/api/tournaments/${tournamentId}/register`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/tournaments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      toast({
+        title: "Registration Successful",
+        description: "You have been registered for the tournament.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const form = useForm({
@@ -47,6 +77,19 @@ export default function TournamentPage() {
     } catch (error) {
       console.error("Failed to create tournament:", error);
     }
+  };
+
+  const getRegistrationStatus = (tournament: Tournament) => {
+    const isRegistered = userRegistrations.some(
+      reg => reg.tournamentId === tournament.id
+    );
+    const isFull = tournament.currentParticipants >= tournament.participants;
+    const isDeadlinePassed = new Date(tournament.registrationDeadline) < new Date();
+
+    if (isRegistered) return { status: "registered", label: "Registered" };
+    if (isFull) return { status: "full", label: "Tournament Full" };
+    if (isDeadlinePassed) return { status: "closed", label: "Registration Closed" };
+    return { status: "open", label: "Register Now" };
   };
 
   if (isLoading) {
@@ -238,9 +281,34 @@ export default function TournamentPage() {
             <div key={tournament.id} className="space-y-8">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Trophy className="h-5 w-5 text-primary" />
-                    <CardTitle>{tournament.name}</CardTitle>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="h-5 w-5 text-primary" />
+                      <CardTitle>{tournament.name}</CardTitle>
+                    </div>
+                    {user?.role === 'player' && (
+                      <div>
+                        {(() => {
+                          const regStatus = getRegistrationStatus(tournament);
+                          return (
+                            <Button
+                              onClick={() => registerMutation.mutate(tournament.id)}
+                              disabled={regStatus.status !== 'open' || registerMutation.isPending}
+                              variant={regStatus.status === 'registered' ? "outline" : "default"}
+                              className={`min-w-[140px] ${
+                                regStatus.status === 'registered' ? 'bg-green-100' : ''
+                              }`}
+                            >
+                              {registerMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                regStatus.label
+                              )}
+                            </Button>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {tournament.description}
