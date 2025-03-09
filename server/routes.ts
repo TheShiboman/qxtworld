@@ -52,8 +52,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Tournament routes
   app.post('/api/tournaments', async (req, res) => {
-    const tournament = await storage.createTournament(req.body);
-    res.json(tournament);
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Only admins and referees can create tournaments
+    if (!['admin', 'referee'].includes(req.user!.role)) {
+      return res.status(403).json({ message: "Not authorized to create tournaments" });
+    }
+
+    try {
+      const tournament = await storage.createTournament(req.body);
+      res.json(tournament);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create tournament" });
+    }
   });
 
   app.get('/api/tournaments', async (req, res) => {
@@ -168,6 +181,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/tournaments/:id/leaderboard', async (req, res) => {
     const leaderboard = await storage.getLeaderboard(parseInt(req.params.id));
     res.json(leaderboard);
+  });
+
+  // Tournament registration routes
+  app.post('/api/tournaments/:id/register', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const tournamentId = parseInt(req.params.id);
+    const tournament = await storage.getTournament(tournamentId);
+
+    if (!tournament) {
+      return res.status(404).json({ message: "Tournament not found" });
+    }
+
+    // Check if tournament is still open for registration
+    if (new Date(tournament.registrationDeadline) < new Date()) {
+      return res.status(400).json({ message: "Registration deadline has passed" });
+    }
+
+    // Check if tournament is full
+    if (tournament.currentParticipants >= tournament.participants) {
+      return res.status(400).json({ message: "Tournament is full" });
+    }
+
+    try {
+      const registration = await storage.createTournamentRegistration({
+        tournamentId,
+        userId: req.user!.id,
+        status: 'pending'
+      });
+      res.json(registration);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to register for tournament" });
+    }
+  });
+
+  // Get tournament registrations (admin/referee only)
+  app.get('/api/tournaments/:id/registrations', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!['admin', 'referee'].includes(req.user!.role)) {
+      return res.status(403).json({ message: "Not authorized to view registrations" });
+    }
+
+    const registrations = await storage.getTournamentRegistrations(parseInt(req.params.id));
+    res.json(registrations);
+  });
+
+  // Get user's tournament registrations
+  app.get('/api/user/tournaments', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const registrations = await storage.getUserTournamentRegistrations(req.user!.id);
+    res.json(registrations);
+  });
+
+  // Update registration status (admin/referee only)
+  app.patch('/api/tournament-registrations/:id', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!['admin', 'referee'].includes(req.user!.role)) {
+      return res.status(403).json({ message: "Not authorized to update registrations" });
+    }
+
+    try {
+      const registration = await storage.updateTournamentRegistration(
+        parseInt(req.params.id),
+        { status: req.body.status }
+      );
+      res.json(registration);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update registration" });
+    }
   });
 
   return httpServer;

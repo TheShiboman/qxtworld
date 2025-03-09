@@ -22,6 +22,8 @@ export const tournaments = pgTable("tournaments", {
   status: text("status").notNull().default("upcoming"),
   format: text("format").notNull(),
   participants: integer("participants").notNull(),
+  registrationDeadline: timestamp("registration_deadline").notNull(),
+  currentParticipants: integer("current_participants").default(0),
   prize: integer("prize").notNull(),
   description: text("description").notNull(),
   bracket: jsonb("bracket").notNull().default([])
@@ -60,6 +62,15 @@ export const predictions = pgTable("predictions", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+export const tournamentRegistrations = pgTable("tournament_registrations", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull(),
+  userId: integer("user_id").notNull(),
+  status: text("status").notNull().default("pending"), 
+  registeredAt: timestamp("registered_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .pick({
@@ -77,7 +88,12 @@ export const insertUserSchema = createInsertSchema(users)
     path: ["passwordConfirm"],
   });
 
-export const insertTournamentSchema = createInsertSchema(tournaments);
+export const insertTournamentSchema = createInsertSchema(tournaments).extend({
+  registrationDeadline: z.string().transform((str) => new Date(str)),
+  startDate: z.string().transform((str) => new Date(str)),
+  endDate: z.string().transform((str) => new Date(str))
+});
+
 export const insertMatchSchema = createInsertSchema(matches);
 export const insertProductSchema = createInsertSchema(products);
 export const insertPredictionSchema = createInsertSchema(predictions).omit({
@@ -85,6 +101,12 @@ export const insertPredictionSchema = createInsertSchema(predictions).omit({
   createdAt: true,
   updatedAt: true
 });
+
+export const insertTournamentRegistrationSchema = createInsertSchema(tournamentRegistrations).omit({
+  registeredAt: true,
+  updatedAt: true
+});
+
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -94,3 +116,5 @@ export type Match = typeof matches.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Prediction = typeof predictions.$inferSelect;
 export type InsertPrediction = z.infer<typeof insertPredictionSchema>;
+export type TournamentRegistration = typeof tournamentRegistrations.$inferSelect;
+export type InsertTournamentRegistration = z.infer<typeof insertTournamentRegistrationSchema>;

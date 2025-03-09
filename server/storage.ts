@@ -1,5 +1,5 @@
-import { users, tournaments, matches, products, predictions } from "@shared/schema";
-import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction } from "@shared/schema";
+import { users, tournaments, matches, products, predictions, tournamentRegistrations } from "@shared/schema";
+import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction, InsertTournamentRegistration, TournamentRegistration } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -39,6 +39,12 @@ export interface IStorage {
   getUserPredictions(userId: number): Promise<Prediction[]>;
   getTournamentPredictions(tournamentId: number): Promise<Prediction[]>;
   getLeaderboard(tournamentId: number): Promise<Array<{ user: User; points: number }>>;
+
+  // Tournament registration operations
+  createTournamentRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration>;
+  getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]>;
+  getUserTournamentRegistrations(userId: number): Promise<TournamentRegistration[]>;
+  updateTournamentRegistration(id: number, data: Partial<TournamentRegistration>): Promise<TournamentRegistration>;
 
   sessionStore: session.Store;
 }
@@ -191,11 +197,62 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUser(id: number, data: Partial<User>): Promise<User> { // Added updateUser method implementation
+  async updateUser(id: number, data: Partial<User>): Promise<User> {
     const [updated] = await db
       .update(users)
       .set(data)
       .where(eq(users.id, id))
+      .returning();
+    return updated;
+  }
+
+  async createTournamentRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration> {
+    const [created] = await db
+      .insert(tournamentRegistrations)
+      .values({
+        ...registration,
+        registeredAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+
+    // Update tournament participant count
+    await db
+      .update(tournaments)
+      .set({
+        currentParticipants: db
+          .select()
+          .from(tournamentRegistrations)
+          .where(eq(tournamentRegistrations.tournamentId, registration.tournamentId))
+          .count()
+      })
+      .where(eq(tournaments.id, registration.tournamentId));
+
+    return created;
+  }
+
+  async getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]> {
+    return db
+      .select()
+      .from(tournamentRegistrations)
+      .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+  }
+
+  async getUserTournamentRegistrations(userId: number): Promise<TournamentRegistration[]> {
+    return db
+      .select()
+      .from(tournamentRegistrations)
+      .where(eq(tournamentRegistrations.userId, userId));
+  }
+
+  async updateTournamentRegistration(id: number, data: Partial<TournamentRegistration>): Promise<TournamentRegistration> {
+    const [updated] = await db
+      .update(tournamentRegistrations)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(tournamentRegistrations.id, id))
       .returning();
     return updated;
   }
