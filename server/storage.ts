@@ -1,16 +1,19 @@
-import { users, tournaments, matches, products } from "@shared/schema";
+import { users, tournaments, matches, products, predictions } from "@shared/schema";
 import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  listUsers(): Promise<User[]>; // Added listUsers method
+  listUsers(): Promise<User[]>;
 
   // Tournament operations
   createTournament(tournament: Tournament): Promise<Tournament>;
@@ -39,147 +42,123 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private tournaments: Map<number, Tournament>;
-  private matches: Map<number, Match>;
-  private products: Map<number, Product>;
-  private predictions: Map<number, Prediction>;
-  private currentId: number;
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.tournaments = new Map();
-    this.matches = new Map();
-    this.products = new Map();
-    this.predictions = new Map();
-    this.currentId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user = {
-      ...insertUser,
-      id,
-      rating: 1500,
-      createdAt: new Date(),
-    } as User;
-    this.users.set(id, user);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async listUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
   async createTournament(tournament: Tournament): Promise<Tournament> {
-    const id = this.currentId++;
-    this.tournaments.set(id, { ...tournament, id });
-    return this.tournaments.get(id)!;
+    const [created] = await db.insert(tournaments).values(tournament).returning();
+    return created;
   }
 
   async getTournament(id: number): Promise<Tournament | undefined> {
-    return this.tournaments.get(id);
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, id));
+    return tournament;
   }
 
   async listTournaments(): Promise<Tournament[]> {
-    return Array.from(this.tournaments.values());
+    return db.select().from(tournaments);
   }
 
   async updateTournament(id: number, data: Partial<Tournament>): Promise<Tournament> {
-    const tournament = this.tournaments.get(id);
-    if (!tournament) throw new Error("Tournament not found");
-    const updated = { ...tournament, ...data };
-    this.tournaments.set(id, updated);
+    const [updated] = await db
+      .update(tournaments)
+      .set(data)
+      .where(eq(tournaments.id, id))
+      .returning();
     return updated;
   }
 
   async createMatch(match: Match): Promise<Match> {
-    const id = this.currentId++;
-    this.matches.set(id, { ...match, id });
-    return this.matches.get(id)!;
+    const [created] = await db.insert(matches).values(match).returning();
+    return created;
   }
 
   async updateMatch(id: number, data: Partial<Match>): Promise<Match> {
-    const match = this.matches.get(id);
-    if (!match) throw new Error("Match not found");
-    const updated = { ...match, ...data };
-    this.matches.set(id, updated);
+    const [updated] = await db
+      .update(matches)
+      .set(data)
+      .where(eq(matches.id, id))
+      .returning();
     return updated;
   }
 
   async getMatch(id: number): Promise<Match | undefined> {
-    return this.matches.get(id);
+    const [match] = await db.select().from(matches).where(eq(matches.id, id));
+    return match;
   }
 
   async getMatchesByTournament(tournamentId: number): Promise<Match[]> {
-    return Array.from(this.matches.values()).filter(
-      (match) => match.tournamentId === tournamentId
-    );
+    return db.select().from(matches).where(eq(matches.tournamentId, tournamentId));
   }
 
   async createProduct(product: Product): Promise<Product> {
-    const id = this.currentId++;
-    this.products.set(id, { ...product, id });
-    return this.products.get(id)!;
+    const [created] = await db.insert(products).values(product).returning();
+    return created;
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
-    return this.products.get(id);
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
   }
 
   async listProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
-  }
-
-  async listUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return db.select().from(products);
   }
 
   async createPrediction(prediction: InsertPrediction): Promise<Prediction> {
-    const id = this.currentId++;
-    const newPrediction = {
+    const [created] = await db.insert(predictions).values({
       ...prediction,
-      id,
       points: 0,
       createdAt: new Date(),
-      updatedAt: new Date()
-    } as Prediction;
-    this.predictions.set(id, newPrediction);
-    return newPrediction;
+      updatedAt: new Date(),
+    }).returning();
+    return created;
   }
 
   async getPrediction(id: number): Promise<Prediction | undefined> {
-    return this.predictions.get(id);
+    const [prediction] = await db.select().from(predictions).where(eq(predictions.id, id));
+    return prediction;
   }
 
   async getUserPredictions(userId: number): Promise<Prediction[]> {
-    return Array.from(this.predictions.values()).filter(
-      (prediction) => prediction.userId === userId
-    );
+    return db.select().from(predictions).where(eq(predictions.userId, userId));
   }
 
   async getTournamentPredictions(tournamentId: number): Promise<Prediction[]> {
-    return Array.from(this.predictions.values()).filter(
-      (prediction) => prediction.tournamentId === tournamentId
-    );
+    return db.select().from(predictions).where(eq(predictions.tournamentId, tournamentId));
   }
 
   async getLeaderboard(tournamentId: number): Promise<Array<{ user: User; points: number }>> {
-    const predictions = await this.getTournamentPredictions(tournamentId);
+    const tournamentPredictions = await this.getTournamentPredictions(tournamentId);
     const userPoints = new Map<number, number>();
 
-    for (const prediction of predictions) {
+    for (const prediction of tournamentPredictions) {
       const currentPoints = userPoints.get(prediction.userId) || 0;
       userPoints.set(prediction.userId, currentPoints + prediction.points);
     }
@@ -195,4 +174,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
