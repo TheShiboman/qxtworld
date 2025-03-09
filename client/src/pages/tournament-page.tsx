@@ -44,7 +44,7 @@ export default function TournamentPage() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">Tournaments</h1>
-        {user.role === "admin" && (
+        {user?.role === "admin" && (
           <Dialog>
             <DialogTrigger asChild>
               <Button>Create Tournament</Button>
@@ -179,7 +179,7 @@ export default function TournamentPage() {
                 </p>
 
                 <Tabs defaultValue="bracket" className="mt-6">
-                  <TabsList>
+                  <TabsList className="mb-4">
                     <TabsTrigger value="bracket">Bracket</TabsTrigger>
                     <TabsTrigger value="predictions">Predictions</TabsTrigger>
                     <TabsTrigger value="insights">
