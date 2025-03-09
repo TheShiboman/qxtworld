@@ -1,7 +1,7 @@
 import { users, tournaments, matches, products, predictions, tournamentRegistrations } from "@shared/schema";
 import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction, InsertTournamentRegistration, TournamentRegistration } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -28,6 +28,8 @@ export interface IStorage {
   updateMatch(id: number, data: Partial<Match>): Promise<Match>;
   getMatch(id: number): Promise<Match | undefined>;
   getMatchesByTournament(tournamentId: number): Promise<Match[]>;
+  getMatchByNumber(tournamentId: number, matchNumber: number): Promise<Match | undefined>;
+  getPlayerMatches(playerId: number): Promise<Match[]>;
 
   // Product operations
   createProduct(product: Product): Promise<Product>;
@@ -137,6 +139,31 @@ export class DatabaseStorage implements IStorage {
 
   async getMatchesByTournament(tournamentId: number): Promise<Match[]> {
     return db.select().from(matches).where(eq(matches.tournamentId, tournamentId));
+  }
+
+  async getMatchByNumber(tournamentId: number, matchNumber: number): Promise<Match | undefined> {
+    const [match] = await db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          eq(matches.tournamentId, tournamentId),
+          eq(matches.matchNumber, matchNumber)
+        )
+      );
+    return match;
+  }
+
+  async getPlayerMatches(playerId: number): Promise<Match[]> {
+    return db
+      .select()
+      .from(matches)
+      .where(
+        or(
+          eq(matches.player1Id, playerId),
+          eq(matches.player2Id, playerId)
+        )
+      );
   }
 
   async createProduct(product: Product): Promise<Product> {

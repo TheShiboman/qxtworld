@@ -13,6 +13,26 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+export const matchStatuses = ['scheduled', 'in_progress', 'completed', 'cancelled'] as const;
+export type MatchStatus = typeof matchStatuses[number];
+
+export const matches = pgTable("matches", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull(),
+  player1Id: integer("player1_id").notNull(),
+  player2Id: integer("player2_id").notNull(),
+  score1: integer("score1").default(0),
+  score2: integer("score2").default(0),
+  status: text("status", { enum: matchStatuses }).notNull().default('scheduled'),
+  round: integer("round").notNull(),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  winner: integer("winner"),
+  matchNumber: integer("match_number").notNull(),
+  nextMatchNumber: integer("next_match_number"), 
+  isWinnersBracket: boolean("is_winners_bracket").default(true) 
+});
+
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -27,20 +47,10 @@ export const tournaments = pgTable("tournaments", {
   prize: integer("prize").notNull(),
   participationFee: integer("participation_fee").notNull().default(0),
   description: text("description").notNull(),
+  currentRound: integer("current_round").default(1),
+  totalRounds: integer("total_rounds"),
+  roundStartTimes: jsonb("round_start_times").default([]), 
   bracket: jsonb("bracket").notNull().default([])
-});
-
-export const matches = pgTable("matches", {
-  id: serial("id").primaryKey(),
-  tournamentId: integer("tournament_id").notNull(),
-  player1Id: integer("player1_id").notNull(),
-  player2Id: integer("player2_id").notNull(),
-  score1: integer("score1").default(0),
-  score2: integer("score2").default(0),
-  status: text("status").notNull().default("scheduled"),
-  startTime: timestamp("start_time"),
-  endTime: timestamp("end_time"),
-  winner: integer("winner")
 });
 
 export const products = pgTable("products", {
@@ -122,3 +132,4 @@ export type Prediction = typeof predictions.$inferSelect;
 export type InsertPrediction = z.infer<typeof insertPredictionSchema>;
 export type TournamentRegistration = typeof tournamentRegistrations.$inferSelect;
 export type InsertTournamentRegistration = z.infer<typeof insertTournamentRegistrationSchema>;
+export type InsertMatch = z.infer<typeof insertMatchSchema>;

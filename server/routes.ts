@@ -6,9 +6,9 @@ import { setupAuth } from "./auth";
 import Stripe from "stripe";
 import { z } from "zod";
 import { insertTournamentSchema, insertMatchSchema, insertProductSchema } from "@shared/schema";
-
+import { TournamentService } from "./services/tournament-service";
 // Only initialize Stripe if we have the secret key
-const stripe = process.env.STRIPE_SECRET_KEY 
+const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
   : null;
 
@@ -71,9 +71,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Failed to create tournament:", error);
 
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid tournament data", 
-          errors: error.errors 
+        return res.status(400).json({
+          message: "Invalid tournament data",
+          errors: error.errors
         });
       }
 
@@ -99,9 +99,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch('/api/matches/:id', async (req, res) => {
-    const match = await storage.updateMatch(parseInt(req.params.id), req.body);
-    res.json(match);
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!['admin', 'referee'].includes(req.user!.role)) {
+      return res.status(403).json({ message: "Not authorized to update matches" });
+    }
+
+    try {
+      const { score1, score2 } = req.body;
+      await TournamentService.updateMatchResult(parseInt(req.params.id), score1, score2);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Failed to update match:", error);
+      res.status(500).json({ message: "Failed to update match" });
+    }
   });
+
+
+  // Add new routes from edited snippet
+  app.post('/api/tournaments/:id/start', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!['admin', 'referee'].includes(req.user!.role)) {
+      return res.status(403).json({ message: "Not authorized to start tournaments" });
+    }
+
+    try {
+      await TournamentService.startTournament(parseInt(req.params.id));
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Failed to start tournament:", error);
+      res.status(500).json({ message: "Failed to start tournament" });
+    }
+  });
+
+  app.get('/api/tournaments/:id/matches', async (req, res) => {
+    const matches = await storage.getMatchesByTournament(parseInt(req.params.id));
+
+    // If matches need player details, fetch them
+    const matchesWithPlayers = await Promise.all(
+      matches.map(async (match) => {
+        const [player1, player2] = await Promise.all([
+          match.player1Id ? storage.getUser(match.player1Id) : null,
+          match.player2Id ? storage.getUser(match.player2Id) : null
+        ]);
+
+        return {
+          ...match,
+          player1: player1 ? { id: player1.id, fullName: player1.fullName } : null,
+          player2: player2 ? { id: player2.id, fullName: player2.fullName } : null
+        };
+      })
+    );
+
+    res.json(matchesWithPlayers);
+  });
+
+  app.get('/api/matches/player', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const matches = await storage.getPlayerMatches(req.user!.id);
+    res.json(matches);
+  });
+
 
   // Product routes
   app.get('/api/products', async (req, res) => {
