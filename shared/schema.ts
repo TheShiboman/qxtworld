@@ -25,6 +25,7 @@ export const tournaments = pgTable("tournaments", {
   registrationDeadline: timestamp("registration_deadline").notNull(),
   currentParticipants: integer("current_participants").default(0),
   prize: integer("prize").notNull(),
+  participationFee: integer("participation_fee").notNull().default(0),
   description: text("description").notNull(),
   bracket: jsonb("bracket").notNull().default([])
 });
@@ -91,7 +92,10 @@ export const insertUserSchema = createInsertSchema(users)
 export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   registrationDeadline: z.string().transform((str) => new Date(str)),
   startDate: z.string().transform((str) => new Date(str)),
-  endDate: z.string().transform((str) => new Date(str))
+  endDate: z.string().transform((str) => new Date(str)),
+  prize: z.string().transform((str) => parseInt(str, 10)),
+  participationFee: z.string().transform((str) => parseInt(str, 10)),
+  participants: z.string().transform((str) => parseInt(str, 10))
 });
 
 export const insertMatchSchema = createInsertSchema(matches);

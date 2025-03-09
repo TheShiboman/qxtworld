@@ -61,8 +61,9 @@ export default function TournamentPage() {
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       format: "single elimination",
-      participants: 8,
-      prize: 1000,
+      participants: "8",
+      prize: "1000",
+      participationFee: "0",
       description: "",
       status: "upcoming",
       currentParticipants: 0,
@@ -229,14 +230,28 @@ export default function TournamentPage() {
                         <FormItem>
                           <FormLabel>Prize Pool ($)</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" min="0" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="participationFee"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Participation Fee ($)</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <FormField
                     control={form.control}
                     name="format"
@@ -339,9 +354,14 @@ export default function TournamentPage() {
                           {tournament.currentParticipants} / {tournament.participants} participants
                         </span>
                       </div>
-                      <p className="text-lg font-bold mt-2">
-                        Prize Pool: ${tournament.prize.toLocaleString()}
-                      </p>
+                      <div className="space-y-2">
+                        <p className="text-lg font-bold">
+                          Prize Pool: ${tournament.prize.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Entry Fee: ${tournament.participationFee.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                     <div className="space-y-4">
                       <div>
