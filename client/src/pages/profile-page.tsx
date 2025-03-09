@@ -37,37 +37,68 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-8">Profile Settings</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>User Role</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-muted-foreground">
-              Select your primary role in the platform. This will determine your access and capabilities.
-            </p>
-            
-            <Select
-              defaultValue={user.role}
-              onValueChange={(value) => updateRoleMutation.mutate(value)}
-              disabled={updateRoleMutation.isPending}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="player">Player</SelectItem>
-                <SelectItem value="coach">Coach</SelectItem>
-                <SelectItem value="referee">Referee</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>User Role</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {user.role === 'admin' ? (
+                <div className="text-sm text-muted-foreground">
+                  You are an administrator. This role has special privileges for managing the platform.
+                </div>
+              ) : (
+                <>
+                  <p className="text-muted-foreground">
+                    Select your primary role in the platform. This will determine your access and capabilities.
+                  </p>
 
-            {updateRoleMutation.isPending && (
-              <p className="text-sm text-muted-foreground">Updating role...</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                  <Select
+                    defaultValue={user.role}
+                    onValueChange={(value) => updateRoleMutation.mutate(value)}
+                    disabled={updateRoleMutation.isPending}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="player">Player</SelectItem>
+                      <SelectItem value="coach">Coach</SelectItem>
+                      <SelectItem value="referee">Referee</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {updateRoleMutation.isPending && (
+                    <p className="text-sm text-muted-foreground">Updating role...</p>
+                  )}
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {user.role === 'admin' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Administration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  As an administrator, you have access to:
+                </p>
+                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                  <li>Creating and managing tournaments</li>
+                  <li>Managing user roles and permissions</li>
+                  <li>Approving tournament registrations</li>
+                  <li>System-wide settings and configurations</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
