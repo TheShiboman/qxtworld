@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,7 +15,6 @@ import Predictions from "@/components/tournaments/predictions";
 import Leaderboard from "@/components/tournaments/leaderboard";
 import InsightsDashboard from "@/components/tournaments/insights-dashboard";
 import { toast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
 import { TournamentRegistration } from "@shared/schema";
 
 export default function TournamentPage() {
@@ -73,17 +72,22 @@ export default function TournamentPage() {
 
   const onSubmit = async (data: any) => {
     try {
-      await apiRequest("POST", "/api/tournaments", data);
+      await apiRequest("POST", "/api/tournaments", {
+        ...data,
+        participants: String(data.participants),
+        prize: String(data.prize),
+        participationFee: String(data.participationFee)
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       toast({
         title: "Success",
         description: "Tournament created successfully.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create tournament:", error);
       toast({
         title: "Error",
-        description: "Failed to create tournament. Please try again.",
+        description: error.message || "Failed to create tournament. Please try again.",
         variant: "destructive"
       });
     }
