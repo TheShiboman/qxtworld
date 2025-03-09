@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,6 +13,7 @@ import Bracket from "@/components/tournaments/bracket";
 import { Trophy, Users, Calendar, Loader2 } from "lucide-react";
 import Predictions from "@/components/tournaments/predictions";
 import Leaderboard from "@/components/tournaments/leaderboard";
+import InsightsDashboard from "@/components/tournaments/insights-dashboard";
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -33,6 +34,8 @@ export default function TournamentPage() {
       prize: 1000,
       description: "",
       status: "upcoming",
+      registrationDeadline: "",
+      currentParticipants: 0,
       bracket: []
     }
   });
@@ -73,40 +76,45 @@ export default function TournamentPage() {
             <DialogTrigger asChild>
               <Button>Create Tournament</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create New Tournament</DialogTitle>
               </DialogHeader>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tournament Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <FormControl>
-                          <select {...field} className="w-full p-2 border rounded">
-                            <option value="snooker">Snooker</option>
-                            <option value="pool">Pool</option>
-                          </select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tournament Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <FormControl>
+                            <select {...field} className="w-full p-2 border rounded-md bg-background">
+                              <option value="snooker">Snooker</option>
+                              <option value="pool">Pool</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
                       name="startDate"
@@ -116,6 +124,7 @@ export default function TournamentPage() {
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -128,34 +137,72 @@ export default function TournamentPage() {
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="registrationDeadline"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Registration Deadline</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="participants"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Participants</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="prize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Prize Pool ($)</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name="participants"
+                    name="format"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Number of Participants</FormLabel>
+                        <FormLabel>Tournament Format</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <select {...field} className="w-full p-2 border rounded-md bg-background">
+                            <option value="single elimination">Single Elimination</option>
+                            <option value="double elimination">Double Elimination</option>
+                            <option value="round robin">Round Robin</option>
+                          </select>
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="prize"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Prize Pool ($)</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+
                   <FormField
                     control={form.control}
                     name="description"
@@ -163,11 +210,16 @@ export default function TournamentPage() {
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <textarea
+                            {...field}
+                            className="w-full p-2 border rounded-md bg-background min-h-[100px]"
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <Button type="submit" className="w-full">Create Tournament</Button>
                 </form>
               </Form>
@@ -190,23 +242,46 @@ export default function TournamentPage() {
                     <Trophy className="h-5 w-5 text-primary" />
                     <CardTitle>{tournament.name}</CardTitle>
                   </div>
+                  <div className="text-sm text-muted-foreground">
+                    {tournament.description}
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {new Date(tournament.startDate).toLocaleDateString()} -
-                        {new Date(tournament.endDate).toLocaleDateString()}
-                      </span>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {new Date(tournament.startDate).toLocaleDateString()} -
+                          {new Date(tournament.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {tournament.currentParticipants} / {tournament.participants} participants
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold mt-2">
+                        Prize Pool: ${tournament.prize.toLocaleString()}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{tournament.participants} participants</span>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium">Format</p>
+                        <p className="text-sm text-muted-foreground">{tournament.format}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Registration Deadline</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(tournament.registrationDeadline).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Status</p>
+                        <p className="text-sm text-muted-foreground capitalize">{tournament.status}</p>
+                      </div>
                     </div>
-                    <p className="text-lg font-bold mt-2">
-                      Prize Pool: ${tournament.prize.toLocaleString()}
-                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -223,6 +298,8 @@ export default function TournamentPage() {
                   </CardContent>
                 </Card>
               )}
+
+              <InsightsDashboard tournament={tournament} />
 
               <Card>
                 <CardHeader>
