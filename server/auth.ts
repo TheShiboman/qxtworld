@@ -42,10 +42,16 @@ export function setupAuth(app: Express) {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+      domain: process.env.NODE_ENV === "production" ? ".replit.app" : undefined
+    },
+    name: "qxt.sid", // Custom name to avoid default 'connect.sid'
+    rolling: true, // Refresh session expiry on each request
   };
 
+  // Enable trust proxy if we're behind a reverse proxy (required for secure cookies)
+  app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
@@ -67,7 +73,7 @@ export function setupAuth(app: Express) {
       } catch (error) {
         return done(error);
       }
-    }),
+    })
   );
 
   passport.serializeUser((user, done) => {
@@ -140,7 +146,12 @@ export function setupAuth(app: Express) {
         if (err) {
           return next(err);
         }
-        res.clearCookie("connect.sid");
+        res.clearCookie("qxt.sid", {
+          path: "/",
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax"
+        });
         res.sendStatus(200);
       });
     });
