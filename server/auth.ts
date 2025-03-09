@@ -23,7 +23,12 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
+    console.log("Comparing passwords...");
     const [hashed, salt] = stored.split(".");
+    if (!hashed || !salt) {
+      console.error("Invalid stored password format");
+      return false;
+    }
     const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
     return timingSafeEqual(hashedBuf, suppliedBuf);
@@ -64,18 +69,26 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`Attempting login for user: ${username}`);
         const user = await storage.getUserByUsername(username);
+
         if (!user) {
+          console.log("User not found");
           return done(null, false, { message: "Invalid username or password" });
         }
 
+        console.log("User found, comparing passwords");
         const isValid = await comparePasswords(password, user.password);
+
         if (!isValid) {
+          console.log("Password comparison failed");
           return done(null, false, { message: "Invalid username or password" });
         }
 
+        console.log("Login successful");
         return done(null, user);
       } catch (error) {
+        console.error("Login error:", error);
         return done(error);
       }
     })
@@ -105,9 +118,12 @@ export function setupAuth(app: Express) {
       }
 
       const { passwordConfirm, ...userData } = req.body;
+      const hashedPassword = await hashPassword(userData.password);
+      console.log("Creating new user with hashed password");
+
       const user = await storage.createUser({
         ...userData,
-        password: await hashPassword(userData.password),
+        password: hashedPassword,
       });
 
       req.login(user, (err) => {
@@ -119,20 +135,24 @@ export function setupAuth(app: Express) {
         res.status(201).json(safeUser);
       });
     } catch (error) {
+      console.error("Registration error:", error);
       next(error);
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
+        console.error("Authentication error:", err);
         return next(err);
       }
       if (!user) {
+        console.log("Authentication failed:", info?.message);
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       req.login(user, (err) => {
         if (err) {
+          console.error("Login error:", err);
           return next(err);
         }
         // Only send non-sensitive user data
