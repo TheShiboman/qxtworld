@@ -118,14 +118,28 @@ export class TournamentService {
 
     // Get all confirmed participants
     const registrations = await storage.getTournamentRegistrations(tournamentId);
+    const confirmedParticipants = registrations.filter(reg => reg.status === 'confirmed');
+
+    if (confirmedParticipants.length < 2) {
+      throw new Error("Not enough confirmed participants to start the tournament");
+    }
+
     const participants = await Promise.all(
-      registrations
-        .filter(reg => reg.status === 'confirmed')
-        .map(reg => storage.getUser(reg.userId))
+      confirmedParticipants.map(reg => storage.getUser(reg.userId))
     );
 
+    // Filter out any null participants
+    const validParticipants = participants.filter((p): p is User => p !== null);
+
     // Generate matches based on tournament format
-    const matches = await this.generateMatches(tournament, participants as User[]);
+    const matches = await this.generateMatches(tournament, validParticipants);
+
+    if (matches.length === 0) {
+      throw new Error("Failed to generate matches for the tournament");
+    }
+
+    // Calculate total rounds safely
+    const totalRounds = Math.max(...matches.map(m => m.round));
 
     // Save matches to database
     for (const match of matches) {
@@ -136,7 +150,7 @@ export class TournamentService {
     await storage.updateTournament(tournamentId, {
       status: 'in_progress',
       currentRound: 1,
-      totalRounds: Math.max(...matches.map(m => m.round))
+      totalRounds
     });
   }
 
@@ -161,8 +175,8 @@ export class TournamentService {
       const nextMatch = await storage.getMatchByNumber(match.tournamentId, match.nextMatchNumber);
       if (nextMatch) {
         // Update next match with winner
-        const updateData = nextMatch.player1Id === 0 ? 
-          { player1Id: winner } : 
+        const updateData = nextMatch.player1Id === 0 ?
+          { player1Id: winner } :
           { player2Id: winner };
         await storage.updateMatch(nextMatch.id, updateData);
       }
