@@ -92,6 +92,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(sanitizedUsers);
   });
 
+  app.patch('/api/users/:id', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Users can only update their own profile
+    if (req.user!.id !== parseInt(req.params.id)) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const { role } = req.body;
+
+    // Validate role
+    if (!['player', 'coach', 'referee'].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    try {
+      const updatedUser = await storage.updateUser(req.user!.id, { role });
+      req.login(updatedUser, (err) => {
+        if (err) throw err;
+        res.json(updatedUser);
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Stripe payment route
   app.post('/api/create-payment-intent', async (req, res) => {
     if (!stripe) {

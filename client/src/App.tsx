@@ -11,6 +11,7 @@ import TournamentPage from "@/pages/tournament-page";
 import LiveScoring from "@/pages/live-scoring";
 import ShopPage from "@/pages/shop-page";
 import PlayersPage from "@/pages/players-page";
+import ProfilePage from "@/pages/profile-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/live-scoring/:id" component={LiveScoring} />
       <ProtectedRoute path="/shop" component={ShopPage} />
       <ProtectedRoute path="/players" component={PlayersPage} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

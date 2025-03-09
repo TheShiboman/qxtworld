@@ -7,7 +7,7 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { Trophy, Monitor, ShoppingBag, LogOut } from "lucide-react";
+import { Trophy, Monitor, ShoppingBag, LogOut, User } from "lucide-react";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -56,7 +56,16 @@ export default function Navbar() {
           </NavigationMenu>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm">Welcome, {user.username}</span>
+            <Link href="/profile">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <User className="h-4 w-4" />
+                {user.fullName}
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="sm"

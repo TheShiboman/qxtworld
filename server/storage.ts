@@ -14,6 +14,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   listUsers(): Promise<User[]>;
+  updateUser(id: number, data: Partial<User>): Promise<User>; // Added updateUser method
 
   // Tournament operations
   createTournament(tournament: Tournament): Promise<Tournament>;
@@ -188,6 +189,15 @@ export class DatabaseStorage implements IStorage {
       console.error('Error getting leaderboard:', error);
       return [];
     }
+  }
+
+  async updateUser(id: number, data: Partial<User>): Promise<User> { // Added updateUser method implementation
+    const [updated] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
   }
 }
 
