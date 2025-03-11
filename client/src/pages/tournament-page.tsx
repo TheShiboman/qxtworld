@@ -333,7 +333,6 @@ export default function TournamentPage() {
                               });
                             }
                           }}
-                          disabled={tournament.currentParticipants < 2}
                         >
                           Start Tournament
                         </Button>
