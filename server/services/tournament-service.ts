@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { tournaments, matches } from "@shared/schema";
+import { wsService } from "./websocket-service";
 
 export class TournamentService {
   static async startTournament(tournamentId: number): Promise<void> {
@@ -90,7 +91,14 @@ export class TournamentService {
         } else {
           winner = data.score1 > data.score2 ? match.player1Id : match.player2Id;
         }
-        status = 'completed';
+
+        // Update status if the match is complete
+        const maxFrames = data.frameCount || match.frameCount || 5;
+        if ((data.score1 + data.score2) >= Math.ceil(maxFrames / 2)) {
+          status = 'completed';
+        } else {
+          status = 'in_progress';
+        }
       }
 
       await db.update(matches)
@@ -103,11 +111,22 @@ export class TournamentService {
         })
         .where(eq(matches.id, matchId));
 
+      // Broadcast the update via WebSocket
+      wsService.broadcastScoreUpdate({
+        type: 'SCORE_UPDATE',
+        matchId,
+        score1: data.score1 || 0,
+        score2: data.score2 || 0,
+        frameNumber: Math.floor((data.score1 || 0) + (data.score2 || 0)) + 1,
+        status
+      });
+
     } catch (error) {
       console.error('[updateMatchResult] Error:', error);
       throw error;
     }
   }
+
   static async lockMatch(matchId: number, userRole: string): Promise<void> {
     if (userRole !== 'admin') {
       throw new Error("Only administrators can lock matches");
