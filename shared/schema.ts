@@ -30,7 +30,11 @@ export const matches = pgTable("matches", {
   winner: integer("winner"),
   matchNumber: integer("match_number").notNull(),
   nextMatchNumber: integer("next_match_number"), 
-  isWinnersBracket: boolean("is_winners_bracket").default(true) 
+  isWinnersBracket: boolean("is_winners_bracket").default(true),
+  // New fields for match management
+  frameCount: integer("frame_count").default(5),
+  refereeId: integer("referee_id"),
+  canDraw: boolean("can_draw").default(false)
 });
 
 export const tournaments = pgTable("tournaments", {

@@ -1,4 +1,4 @@
-import { Match, Tournament } from "@shared/schema";
+import { Match, Tournament, User } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Loader2, Edit } from "lucide-react";
@@ -11,6 +11,14 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+
 
 interface BracketProps {
   tournament: Tournament;
@@ -19,11 +27,16 @@ interface BracketProps {
 interface MatchWithPlayers extends Match {
   player1?: { id: number; fullName: string } | null;
   player2?: { id: number; fullName: string } | null;
+  referee?: User | null;
 }
 
 interface UpdateMatchForm {
   score1: number;
   score2: number;
+  frameCount: number;
+  refereeId: string;
+  startTime: Date;
+  canDraw: boolean;
 }
 
 export default function Bracket({ tournament }: BracketProps) {
@@ -32,7 +45,12 @@ export default function Bracket({ tournament }: BracketProps) {
 
   const { data: matches = [], isLoading } = useQuery<MatchWithPlayers[]>({
     queryKey: [`/api/tournaments/${tournament.id}/matches`],
-    refetchInterval: 5000, // Poll for updates every 5 seconds
+    refetchInterval: 5000,
+  });
+
+  const { data: referees = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    select: (users) => users.filter(u => u.role === 'referee'),
   });
 
   const updateMatchMutation = useMutation({
@@ -43,7 +61,7 @@ export default function Bracket({ tournament }: BracketProps) {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournament.id}/matches`] });
       toast({
         title: "Match updated",
-        description: "The match scores have been updated successfully.",
+        description: "The match has been updated successfully.",
       });
     },
     onError: (error: Error) => {
@@ -63,7 +81,6 @@ export default function Bracket({ tournament }: BracketProps) {
     );
   }
 
-  // Group matches by round
   const matchesByRound = matches.reduce((acc: MatchWithPlayers[][], match) => {
     const roundIndex = match.round - 1;
     if (!acc[roundIndex]) {
@@ -78,6 +95,10 @@ export default function Bracket({ tournament }: BracketProps) {
       defaultValues: {
         score1: match.score1,
         score2: match.score2,
+        frameCount: match.frameCount || 5,
+        refereeId: match.refereeId?.toString() || "",
+        startTime: match.startTime ? new Date(match.startTime) : new Date(),
+        canDraw: match.canDraw || false,
       },
     });
 
@@ -92,9 +113,9 @@ export default function Bracket({ tournament }: BracketProps) {
             <Edit className="h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Update Match Score</DialogTitle>
+            <DialogTitle>Update Match Details</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -124,6 +145,121 @@ export default function Bracket({ tournament }: BracketProps) {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="frameCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Best of Frames</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frame count" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[3, 5, 7, 9, 11].map((count) => (
+                          <SelectItem key={count} value={count.toString()}>
+                            Best of {count}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="refereeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign Referee</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a referee" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {referees.map((referee) => (
+                          <SelectItem key={referee.id} value={referee.id.toString()}>
+                            {referee.fullName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Match Date & Time</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP HH:mm")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date(tournament.startDate) ||
+                            date > new Date(tournament.endDate)
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="canDraw"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Allow Draw</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
               <Button
                 type="submit"
                 className="w-full"
@@ -132,7 +268,7 @@ export default function Bracket({ tournament }: BracketProps) {
                 {updateMatchMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Update Score'
+                  'Update Match'
                 )}
               </Button>
             </form>
@@ -206,12 +342,18 @@ export default function Bracket({ tournament }: BracketProps) {
                             </p>
                           </motion.div>
                           <div className="text-xs text-muted-foreground mt-2">
+                            {match.referee && (
+                              <p>Referee: {match.referee.fullName}</p>
+                            )}
+                            {match.frameCount && (
+                              <p>Best of {match.frameCount}</p>
+                            )}
                             {match.status === 'scheduled' && match.startTime && (
                               <motion.span
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                               >
-                                Scheduled: {new Date(match.startTime).toLocaleString()}
+                                Scheduled: {format(new Date(match.startTime), "PPP HH:mm")}
                               </motion.span>
                             )}
                             {match.status === 'in_progress' && (
@@ -237,7 +379,6 @@ export default function Bracket({ tournament }: BracketProps) {
                       </CardContent>
                     </Card>
 
-                    {/* Draw connecting lines to next match */}
                     {match.nextMatchNumber > 0 && (
                       <motion.svg
                         className="absolute top-1/2 right-0 w-8 h-px"
