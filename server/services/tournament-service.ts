@@ -12,13 +12,69 @@ export class TournamentService {
         throw new Error("Tournament not found");
       }
 
-      // Create empty tournament bracket
-      const match = {
+      // Create initial bracket structure
+      const initialMatches = [];
+      // Start with 4 matches for initial bracket
+      for (let i = 0; i < 4; i++) {
+        initialMatches.push({
+          tournamentId,
+          player1Id: 0,
+          player2Id: 0,
+          round: 1,
+          matchNumber: i + 1,
+          nextMatchNumber: Math.floor(i / 2) + 5, // Next round match numbers start at 5
+          status: 'scheduled' as const,
+          score1: null,
+          score2: null,
+          startTime: new Date(tournament.startDate),
+          endTime: null,
+          winner: null,
+          isWinnersBracket: true,
+          frameCount: 5,
+          refereeId: null,
+          canDraw: true,
+          tableNumber: null,
+          lastEditedBy: null,
+          lastEditedAt: null,
+          notes: '',
+          isLocked: false
+        });
+      }
+
+      // Add semifinal matches
+      for (let i = 0; i < 2; i++) {
+        initialMatches.push({
+          tournamentId,
+          player1Id: 0,
+          player2Id: 0,
+          round: 2,
+          matchNumber: i + 5,
+          nextMatchNumber: 7, // Final match number
+          status: 'scheduled' as const,
+          score1: null,
+          score2: null,
+          startTime: new Date(tournament.startDate),
+          endTime: null,
+          winner: null,
+          isWinnersBracket: true,
+          frameCount: 5,
+          refereeId: null,
+          canDraw: true,
+          tableNumber: null,
+          lastEditedBy: null,
+          lastEditedAt: null,
+          notes: '',
+          isLocked: false
+        });
+      }
+
+      // Add final match
+      initialMatches.push({
         tournamentId,
         player1Id: 0,
         player2Id: 0,
-        round: 1,
-        matchNumber: 1,
+        round: 3,
+        matchNumber: 7,
         nextMatchNumber: null,
         status: 'scheduled' as const,
         score1: null,
@@ -35,7 +91,7 @@ export class TournamentService {
         lastEditedAt: null,
         notes: '',
         isLocked: false
-      };
+      });
 
       await db.transaction(async (tx) => {
         // Update tournament status
@@ -43,12 +99,14 @@ export class TournamentService {
           .set({ 
             status: 'in_progress',
             currentRound: 1,
-            totalRounds: 1
+            totalRounds: 3
           })
           .where(eq(tournaments.id, tournamentId));
 
-        // Create initial match
-        await tx.insert(matches).values(match);
+        // Create all matches
+        for (const match of initialMatches) {
+          await tx.insert(matches).values(match);
+        }
       });
 
     } catch (error) {
@@ -98,7 +156,7 @@ export class TournamentService {
       }
 
       await db.transaction(async (tx) => {
-        // Update match with new data
+        // Update current match
         await tx.update(matches)
           .set({
             ...data,
