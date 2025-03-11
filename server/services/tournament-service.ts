@@ -213,26 +213,40 @@ export class TournamentService {
           status: 'in_progress',
           currentRound: 1,
           totalRounds,
-          roundStartTimes: matches.map(m => m.startTime)
+          roundStartTimes: matches.map(m => m.startTime).filter(Boolean)
         });
 
         // Then create matches
         console.log('[startTournament] Creating matches in database');
         for (const match of matches) {
-          const createdMatch = await storage.createMatch(match);
-          console.log(`[startTournament] Created match ID ${createdMatch.id} (Round ${match.round}, Players: ${match.player1Id} vs ${match.player2Id})`);
+          try {
+            const createdMatch = await storage.createMatch({
+              ...match,
+              score1: 0,
+              score2: 0,
+              status: 'scheduled',
+              startTime: new Date(tournament.startDate),
+              endTime: null,
+              winner: null,
+              isWinnersBracket: true
+            });
+            console.log(`[startTournament] Created match ID ${createdMatch.id} (Round ${match.round}, Players: ${match.player1Id} vs ${match.player2Id})`);
+          } catch (error) {
+            console.error('[startTournament] Failed to create match:', error);
+            // Rollback tournament status
+            await storage.updateTournament(tournamentId, {
+              status: 'upcoming',
+              currentRound: 0,
+              totalRounds: 0,
+              roundStartTimes: []
+            });
+            throw new Error(`Failed to create match: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         }
 
         console.log(`[startTournament] Tournament ${tournamentId} started successfully`);
       } catch (error) {
-        // If match creation fails, revert tournament status
-        console.error('[startTournament] Failed to create matches:', error);
-        await storage.updateTournament(tournamentId, {
-          status: 'upcoming',
-          currentRound: 0,
-          totalRounds: 0,
-          roundStartTimes: []
-        });
+        console.error('[startTournament] Tournament start failed:', error);
         throw error;
       }
     } catch (error) {
