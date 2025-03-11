@@ -7,19 +7,16 @@ import { tournaments, matches } from "@shared/schema";
 export class TournamentService {
   static async startTournament(tournamentId: number): Promise<void> {
     try {
-      // Get tournament
       const tournament = await storage.getTournament(tournamentId);
       if (!tournament) {
         throw new Error("Tournament not found");
       }
 
-      // Get and validate participants
       const registrations = await storage.getTournamentRegistrations(tournamentId);
       if (registrations.length < 2) {
         throw new Error("Not enough participants to start tournament");
       }
 
-      // Get participant details
       const participants = await Promise.all(
         registrations.map(reg => storage.getUser(reg.userId))
       );
@@ -30,33 +27,46 @@ export class TournamentService {
       }
 
       // Create first round matches
-      const match = {
-        tournamentId,
-        player1Id: validParticipants[0].id,
-        player2Id: validParticipants[1].id,
-        round: 1,
-        matchNumber: 1,
-        nextMatchNumber: 0,
-        status: 'scheduled',
-        score1: 0,
-        score2: 0,
-        startTime: new Date(tournament.startDate),
-        endTime: null,
-        winner: null,
-        isWinnersBracket: true,
-        frameCount: 5, // Default to best of 5
-        canDraw: false // Default to no draws
-      };
+      const rounds = Math.ceil(Math.log2(validParticipants.length));
+      const totalMatches = Math.pow(2, rounds) - 1;
+      const firstRoundMatches = [];
 
-      // Execute transaction
+      for (let i = 0; i < validParticipants.length; i += 2) {
+        const matchNumber = Math.floor(i / 2) + 1;
+        firstRoundMatches.push({
+          tournamentId,
+          player1Id: validParticipants[i].id,
+          player2Id: i + 1 < validParticipants.length ? validParticipants[i + 1].id : 0,
+          round: 1,
+          matchNumber,
+          nextMatchNumber: Math.floor((matchNumber - 1) / 2) + Math.pow(2, rounds - 2) + 1,
+          status: 'scheduled',
+          score1: 0,
+          score2: 0,
+          startTime: new Date(tournament.startDate),
+          endTime: null,
+          winner: null,
+          isWinnersBracket: true,
+          frameCount: 5,
+          canDraw: true
+        });
+      }
+
       await db.transaction(async (tx) => {
-        // Update tournament status
+        // Update tournament status and structure
         await tx.update(tournaments)
-          .set({ status: 'in_progress' })
+          .set({
+            status: 'in_progress',
+            currentRound: 1,
+            totalRounds: rounds,
+            bracket: JSON.stringify(firstRoundMatches)
+          })
           .where(eq(tournaments.id, tournamentId));
 
-        // Create first match
-        await tx.insert(matches).values(match);
+        // Create all matches
+        for (const match of firstRoundMatches) {
+          await tx.insert(matches).values(match);
+        }
       });
 
     } catch (error) {
@@ -86,11 +96,6 @@ export class TournamentService {
         throw new Error("Match not found");
       }
 
-      // Only admins can edit locked/completed matches
-      if (match.isLocked && userRole !== 'admin') {
-        throw new Error("Match is locked. Only administrators can edit locked matches.");
-      }
-
       // Only admins and referees can update scores
       if ((data.score1 !== undefined || data.score2 !== undefined) && 
           userRole !== 'admin' && userRole !== 'referee') {
@@ -99,12 +104,14 @@ export class TournamentService {
 
       // Determine winner or draw
       let winner: number | null = null;
-      if (!data.canDraw || data.score1 !== data.score2) {
+      if (data.canDraw && data.score1 === data.score2) {
+        winner = null; // This is a draw
+      } else {
         winner = data.score1 > data.score2 ? match.player1Id : match.player2Id;
       }
 
       await db.transaction(async (tx) => {
-        // Update match
+        // Update match with new data
         await tx.update(matches)
           .set({
             ...data,
@@ -117,7 +124,7 @@ export class TournamentService {
           .where(eq(matches.id, matchId));
 
         // If we have a winner and next match exists, update it
-        if (winner && match.nextMatchNumber) {
+        if (winner !== null && match.nextMatchNumber) {
           const nextMatch = await storage.getMatchByNumber(match.tournamentId, match.nextMatchNumber);
           if (nextMatch) {
             await tx.update(matches)

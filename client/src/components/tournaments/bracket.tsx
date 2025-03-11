@@ -27,9 +27,9 @@ interface MatchWithPlayers extends Match {
   player1?: { id: number; fullName: string } | null;
   player2?: { id: number; fullName: string } | null;
   referee?: User | null;
-  isLocked?: boolean; //Added isLocked field
-  notes?: string; //Added notes field
-  tableNumber?: number | null; //Added tableNumber field
+  isLocked?: boolean; 
+  notes?: string; 
+  tableNumber?: number | null; 
 }
 
 interface UpdateMatchForm {
@@ -142,7 +142,8 @@ export default function Bracket({ tournament }: BracketProps) {
             variant="ghost" 
             size="icon" 
             className="absolute top-2 right-2"
-            disabled={!isAdmin && match.isLocked}
+            // Allow editing at any time
+            disabled={!isAdmin && !isReferee && (form.getValues('score1') !== undefined || form.getValues('score2') !== undefined)}
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -153,7 +154,7 @@ export default function Bracket({ tournament }: BracketProps) {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {canEditScores && (
+              {(isAdmin || isReferee) && (
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -337,32 +338,17 @@ export default function Bracket({ tournament }: BracketProps) {
                 )}
               />
 
-              <div className="flex justify-between gap-4">
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={updateMatchMutation.isPending}
-                >
-                  {updateMatchMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Update Match'
-                  )}
-                </Button>
-
-                {isAdmin && match.status === 'completed' && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => match.isLocked ? 
-                      unlockMatchMutation.mutate(match.id) : 
-                      lockMatchMutation.mutate(match.id)
-                    }
-                  >
-                    {match.isLocked ? 'Unlock Match' : 'Lock Match'}
-                  </Button>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={updateMatchMutation.isPending}
+              >
+                {updateMatchMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Update Match'
                 )}
-              </div>
+              </Button>
             </form>
           </Form>
         </DialogContent>
