@@ -12,17 +12,17 @@ export class TournamentService {
         throw new Error("Tournament not found");
       }
 
-      // Create initial match
+      // Create empty tournament bracket
       const match = {
         tournamentId,
         player1Id: 0,
         player2Id: 0,
         round: 1,
         matchNumber: 1,
-        nextMatchNumber: 0,
-        status: 'scheduled',
-        score1: 0,
-        score2: 0,
+        nextMatchNumber: null,
+        status: 'scheduled' as const,
+        score1: null,
+        score2: null,
         startTime: new Date(tournament.startDate),
         endTime: null,
         winner: null,
@@ -48,7 +48,7 @@ export class TournamentService {
           .where(eq(tournaments.id, tournamentId));
 
         // Create initial match
-        await tx.insert(matches).values([match]);
+        await tx.insert(matches).values(match);
       });
 
     } catch (error) {
@@ -60,13 +60,13 @@ export class TournamentService {
   static async updateMatchResult(
     matchId: number,
     data: {
-      score1: number;
-      score2: number;
+      score1: number | null;
+      score2: number | null;
       frameCount?: number;
       refereeId?: number;
       startTime?: Date;
       canDraw?: boolean;
-      tableNumber?: number;
+      tableNumber?: number | null;
       notes?: string;
     },
     userId: number,
@@ -86,10 +86,15 @@ export class TournamentService {
 
       // Determine winner or draw
       let winner: number | null = null;
-      if (data.canDraw && data.score1 === data.score2) {
-        winner = null; // This is a draw
-      } else if (data.score1 !== data.score2) {
-        winner = data.score1 > data.score2 ? match.player1Id : match.player2Id;
+      let status = match.status;
+
+      if (data.score1 !== null && data.score2 !== null) {
+        if (data.canDraw && data.score1 === data.score2) {
+          winner = null; // Draw
+        } else {
+          winner = data.score1 > data.score2 ? match.player1Id : match.player2Id;
+        }
+        status = 'completed';
       }
 
       await db.transaction(async (tx) => {
@@ -98,6 +103,7 @@ export class TournamentService {
           .set({
             ...data,
             winner,
+            status,
             lastEditedBy: userId,
             lastEditedAt: new Date(),
           })
