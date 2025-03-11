@@ -12,40 +12,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Bracket from "@/components/tournaments/bracket";
 import { Trophy, Users, Calendar, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { TournamentRegistration } from "@shared/schema";
 
 export default function TournamentPage() {
   const { user } = useAuth();
 
-  const { data: tournaments = [], isLoading, error } = useQuery<Tournament[]>({
+  const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
-  });
-
-  const { data: userRegistrations = [] } = useQuery<TournamentRegistration[]>({
-    queryKey: ["/api/user/tournaments"],
-    enabled: !!user
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (tournamentId: number) => {
-      const response = await apiRequest("POST", `/api/tournaments/${tournamentId}/register`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/tournaments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
-      toast({
-        title: "Registration Successful",
-        description: "You have been registered for the tournament.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
   });
 
   const form = useForm({
@@ -90,33 +62,11 @@ export default function TournamentPage() {
     }
   };
 
-  const getRegistrationStatus = (tournament: Tournament) => {
-    const isRegistered = userRegistrations.some(
-      reg => reg.tournamentId === tournament.id
-    );
-    const isFull = tournament.currentParticipants >= parseInt(tournament.participants);
-    const isDeadlinePassed = new Date(tournament.registrationDeadline) < new Date();
-
-    if (isRegistered) return { status: "registered", label: "Registered" };
-    if (isFull) return { status: "full", label: "Tournament Full" };
-    if (isDeadlinePassed) return { status: "closed", label: "Registration Closed" };
-    return { status: "open", label: "Register Now" };
-  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center text-red-500">
-          Failed to load tournaments. Please try again later.
-        </div>
       </div>
     );
   }
@@ -309,7 +259,7 @@ export default function TournamentPage() {
                     <CardTitle>{tournament.name}</CardTitle>
                   </div>
                   <div className="flex gap-2">
-                    {user?.role === 'admin' && (
+                    {user?.role === 'admin' && tournament.status === 'upcoming' && (
                       <Button
                         onClick={async () => {
                           try {
@@ -332,27 +282,9 @@ export default function TournamentPage() {
                       </Button>
                     )}
                     {user?.role === 'player' && (
-                      <div>
-                        {(() => {
-                          const regStatus = getRegistrationStatus(tournament);
-                          return (
-                            <Button
-                              onClick={() => registerMutation.mutate(tournament.id)}
-                              disabled={regStatus.status !== 'open' || registerMutation.isPending}
-                              variant={regStatus.status === 'registered' ? "outline" : "default"}
-                              className={`min-w-[140px] ${
-                                regStatus.status === 'registered' ? 'bg-green-100' : ''
-                              }`}
-                            >
-                              {registerMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                regStatus.label
-                              )}
-                            </Button>
-                          );
-                        })()}
-                      </div>
+                      <Button onClick={() => {}} disabled={tournament.currentParticipants >= parseInt(tournament.participants)} variant={"default"}>
+                        Register Now
+                      </Button>
                     )}
                   </div>
                 </div>

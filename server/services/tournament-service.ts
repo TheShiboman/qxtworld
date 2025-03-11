@@ -12,69 +12,13 @@ export class TournamentService {
         throw new Error("Tournament not found");
       }
 
-      // Create initial bracket structure
-      const initialMatches = [];
-      // Start with 4 matches for initial bracket
-      for (let i = 0; i < 4; i++) {
-        initialMatches.push({
-          tournamentId,
-          player1Id: 0,
-          player2Id: 0,
-          round: 1,
-          matchNumber: i + 1,
-          nextMatchNumber: Math.floor(i / 2) + 5, // Next round match numbers start at 5
-          status: 'scheduled' as const,
-          score1: null,
-          score2: null,
-          startTime: new Date(tournament.startDate),
-          endTime: null,
-          winner: null,
-          isWinnersBracket: true,
-          frameCount: 5,
-          refereeId: null,
-          canDraw: true,
-          tableNumber: null,
-          lastEditedBy: null,
-          lastEditedAt: null,
-          notes: '',
-          isLocked: false
-        });
-      }
-
-      // Add semifinal matches
-      for (let i = 0; i < 2; i++) {
-        initialMatches.push({
-          tournamentId,
-          player1Id: 0,
-          player2Id: 0,
-          round: 2,
-          matchNumber: i + 5,
-          nextMatchNumber: 7, // Final match number
-          status: 'scheduled' as const,
-          score1: null,
-          score2: null,
-          startTime: new Date(tournament.startDate),
-          endTime: null,
-          winner: null,
-          isWinnersBracket: true,
-          frameCount: 5,
-          refereeId: null,
-          canDraw: true,
-          tableNumber: null,
-          lastEditedBy: null,
-          lastEditedAt: null,
-          notes: '',
-          isLocked: false
-        });
-      }
-
-      // Add final match
-      initialMatches.push({
+      // Create initial bracket match
+      const match = {
         tournamentId,
         player1Id: 0,
         player2Id: 0,
-        round: 3,
-        matchNumber: 7,
+        round: 1,
+        matchNumber: 1,
         nextMatchNumber: null,
         status: 'scheduled' as const,
         score1: null,
@@ -91,22 +35,16 @@ export class TournamentService {
         lastEditedAt: null,
         notes: '',
         isLocked: false
-      });
+      };
 
       await db.transaction(async (tx) => {
         // Update tournament status
         await tx.update(tournaments)
-          .set({ 
-            status: 'in_progress',
-            currentRound: 1,
-            totalRounds: 3
-          })
+          .set({ status: 'in_progress' })
           .where(eq(tournaments.id, tournamentId));
 
-        // Create all matches
-        for (const match of initialMatches) {
-          await tx.insert(matches).values(match);
-        }
+        // Create initial match
+        await tx.insert(matches).values(match);
       });
 
     } catch (error) {
@@ -155,37 +93,21 @@ export class TournamentService {
         status = 'completed';
       }
 
-      await db.transaction(async (tx) => {
-        // Update current match
-        await tx.update(matches)
-          .set({
-            ...data,
-            winner,
-            status,
-            lastEditedBy: userId,
-            lastEditedAt: new Date(),
-          })
-          .where(eq(matches.id, matchId));
-
-        // If we have a winner and next match exists, update it
-        if (winner !== null && match.nextMatchNumber) {
-          const nextMatch = await storage.getMatchByNumber(match.tournamentId, match.nextMatchNumber);
-          if (nextMatch) {
-            await tx.update(matches)
-              .set(nextMatch.player1Id === 0 
-                ? { player1Id: winner }
-                : { player2Id: winner })
-              .where(eq(matches.id, nextMatch.id));
-          }
-        }
-      });
+      await db.update(matches)
+        .set({
+          ...data,
+          winner,
+          status,
+          lastEditedBy: userId,
+          lastEditedAt: new Date(),
+        })
+        .where(eq(matches.id, matchId));
 
     } catch (error) {
       console.error('[updateMatchResult] Error:', error);
       throw error;
     }
   }
-
   static async lockMatch(matchId: number, userRole: string): Promise<void> {
     if (userRole !== 'admin') {
       throw new Error("Only administrators can lock matches");
