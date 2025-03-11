@@ -11,9 +11,6 @@ import { Tournament, insertTournamentSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Bracket from "@/components/tournaments/bracket";
 import { Trophy, Users, Calendar, Loader2 } from "lucide-react";
-import Predictions from "@/components/tournaments/predictions";
-import Leaderboard from "@/components/tournaments/leaderboard";
-import InsightsDashboard from "@/components/tournaments/insights-dashboard";
 import { toast } from "@/hooks/use-toast";
 import { TournamentRegistration } from "@shared/schema";
 
@@ -300,143 +297,131 @@ export default function TournamentPage() {
       </div>
 
       <div className="space-y-8">
-        {tournaments.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No tournaments available
-          </div>
-        ) : (
-          tournaments.map((tournament) => (
-            <div key={tournament.id} className="space-y-8">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
+        {tournaments.map((tournament) => (
+          <div key={tournament.id} className="space-y-8">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                    <CardTitle>{tournament.name}</CardTitle>
+                  </div>
+                  <div className="flex gap-2">
+                    {user?.role === 'admin' && (
+                      <Button
+                        onClick={async () => {
+                          try {
+                            await apiRequest("POST", `/api/tournaments/${tournament.id}/start`);
+                            queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+                            toast({
+                              title: "Tournament Started",
+                              description: "The tournament has been started and matches have been generated.",
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error.message || "Failed to start tournament",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                      >
+                        Start Tournament
+                      </Button>
+                    )}
+                    {user?.role === 'player' && (
+                      <div>
+                        {(() => {
+                          const regStatus = getRegistrationStatus(tournament);
+                          return (
+                            <Button
+                              onClick={() => registerMutation.mutate(tournament.id)}
+                              disabled={regStatus.status !== 'open' || registerMutation.isPending}
+                              variant={regStatus.status === 'registered' ? "outline" : "default"}
+                              className={`min-w-[140px] ${
+                                regStatus.status === 'registered' ? 'bg-green-100' : ''
+                              }`}
+                            >
+                              {registerMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                regStatus.label
+                              )}
+                            </Button>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {tournament.description}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5 text-primary" />
-                      <CardTitle>{tournament.name}</CardTitle>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {new Date(tournament.startDate).toLocaleDateString()} -
+                        {new Date(tournament.endDate).toLocaleDateString()}
+                      </span>
                     </div>
-                    <div className="flex gap-2">
-                      {user?.role === 'admin' && tournament.status === 'upcoming' && (
-                        <Button
-                          onClick={async () => {
-                            try {
-                              await apiRequest("POST", `/api/tournaments/${tournament.id}/start`);
-                              queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
-                              toast({
-                                title: "Tournament Started",
-                                description: "The tournament has been started and matches have been generated.",
-                              });
-                            } catch (error: any) {
-                              toast({
-                                title: "Error",
-                                description: error.message || "Failed to start tournament",
-                                variant: "destructive"
-                              });
-                            }
-                          }}
-                        >
-                          Start Tournament
-                        </Button>
-                      )}
-                      {user?.role === 'player' && (
-                        <div>
-                          {(() => {
-                            const regStatus = getRegistrationStatus(tournament);
-                            return (
-                              <Button
-                                onClick={() => registerMutation.mutate(tournament.id)}
-                                disabled={regStatus.status !== 'open' || registerMutation.isPending}
-                                variant={regStatus.status === 'registered' ? "outline" : "default"}
-                                className={`min-w-[140px] ${
-                                  regStatus.status === 'registered' ? 'bg-green-100' : ''
-                                }`}
-                              >
-                                {registerMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  regStatus.label
-                                )}
-                              </Button>
-                            );
-                          })()}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {tournament.currentParticipants} / {tournament.participants} participants
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-lg font-bold">
+                        Prize Pool: ${tournament.prize.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Entry Fee: ${tournament.participationFee.toLocaleString()}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {tournament.description}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {new Date(tournament.startDate).toLocaleDateString()} -
-                          {new Date(tournament.endDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {tournament.currentParticipants} / {tournament.participants} participants
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-lg font-bold">
-                          Prize Pool: ${tournament.prize.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Entry Fee: ${tournament.participationFee.toLocaleString()}
-                        </p>
-                      </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium">Format</p>
+                      <p className="text-sm text-muted-foreground">{tournament.format}</p>
                     </div>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium">Format</p>
-                        <p className="text-sm text-muted-foreground">{tournament.format}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Registration Deadline</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(tournament.registrationDeadline).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Status</p>
-                        <p className="text-sm text-muted-foreground capitalize">{tournament.status}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium">Registration Deadline</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(tournament.registrationDeadline).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Status</p>
+                      <p className="text-sm text-muted-foreground capitalize">{tournament.status}</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Leaderboard tournament={tournament} />
-
-              {tournament.status === "in_progress" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Tournament Bracket</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Bracket tournament={tournament} />
-                  </CardContent>
-                </Card>
-              )}
-
-              <InsightsDashboard tournament={tournament} />
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Make Your Prediction</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Predictions tournament={tournament} />
-                </CardContent>
-              </Card>
-            </div>
-          ))
-        )}
+            <Card>
+              <CardHeader>
+                <CardTitle>Tournament Bracket</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Bracket tournament={tournament} />
+              </CardContent>
+            </Card>
+            <Leaderboard tournament={tournament} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Make Your Prediction</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Predictions tournament={tournament} />
+              </CardContent>
+            </Card>
+          </div>
+        ))}
       </div>
     </div>
   );
