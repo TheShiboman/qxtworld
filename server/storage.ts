@@ -1,11 +1,10 @@
 import { users, tournaments, matches, products, predictions, tournamentRegistrations } from "@shared/schema";
 import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction, InsertTournamentRegistration, TournamentRegistration } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, ne } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
-import { sql } from 'drizzle-orm';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -49,6 +48,8 @@ export interface IStorage {
   getUserTournamentRegistrations(userId: number): Promise<TournamentRegistration[]>;
   updateTournamentRegistration(id: number, data: Partial<TournamentRegistration>): Promise<TournamentRegistration>;
 
+  // Add new method for getting uncompleted matches
+  getTournamentUncompletedMatches(tournamentId: number): Promise<Match[]>;
   sessionStore: session.Store;
 }
 
@@ -301,6 +302,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tournamentRegistrations.id, id))
       .returning();
     return updated;
+  }
+
+  async getTournamentUncompletedMatches(tournamentId: number): Promise<Match[]> {
+    return db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          eq(matches.tournamentId, tournamentId),
+          ne(matches.status, 'completed')
+        )
+      );
   }
 }
 

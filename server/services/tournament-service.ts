@@ -74,14 +74,16 @@ export class TournamentService {
 
   static async updateMatchResult(matchId: number, score1: number, score2: number): Promise<void> {
     try {
+      // Get current match
       const match = await storage.getMatch(matchId);
       if (!match) {
         throw new Error("Match not found");
       }
 
+      // Determine winner
       const winner = score1 > score2 ? match.player1Id : match.player2Id;
-      const status = 'completed';
 
+      // Update match result
       await db.transaction(async (tx) => {
         // Update current match
         await tx.update(matches)
@@ -89,40 +91,25 @@ export class TournamentService {
             score1,
             score2,
             winner,
-            status,
+            status: 'completed',
             endTime: new Date()
           })
           .where(eq(matches.id, matchId));
 
-        // If there's a next match, update it with the winner
+        // If there's a next match, update it
         if (match.nextMatchNumber) {
           const nextMatch = await storage.getMatchByNumber(match.tournamentId, match.nextMatchNumber);
           if (nextMatch) {
-            const updateData = nextMatch.player1Id === 0
-              ? { player1Id: winner }
-              : { player2Id: winner };
-
+            // Update next match with winner
             await tx.update(matches)
-              .set(updateData)
+              .set(nextMatch.player1Id === 0 
+                ? { player1Id: winner }
+                : { player2Id: winner })
               .where(eq(matches.id, nextMatch.id));
-
-            // If both players are set, update the match status
-            if (nextMatch.player1Id !== 0 && nextMatch.player2Id !== 0) {
-              await tx.update(matches)
-                .set({ status: 'scheduled' })
-                .where(eq(matches.id, nextMatch.id));
-            }
           }
         }
-
-        // Check if tournament is completed
-        const remainingMatches = await storage.getTournamentUncompletedMatches(match.tournamentId);
-        if (remainingMatches.length === 0) {
-          await tx.update(tournaments)
-            .set({ status: 'completed' })
-            .where(eq(tournaments.id, match.tournamentId));
-        }
       });
+
     } catch (error) {
       console.error('[updateMatchResult] Error:', error);
       throw error;
