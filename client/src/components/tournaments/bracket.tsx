@@ -1,8 +1,16 @@
 import { Match, Tournament } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Loader2, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { toast } from "@/hooks/use-toast";
 
 interface BracketProps {
   tournament: Tournament;
@@ -13,9 +21,38 @@ interface MatchWithPlayers extends Match {
   player2?: { id: number; fullName: string } | null;
 }
 
+interface UpdateMatchForm {
+  score1: number;
+  score2: number;
+}
+
 export default function Bracket({ tournament }: BracketProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const { data: matches = [], isLoading } = useQuery<MatchWithPlayers[]>({
     queryKey: [`/api/tournaments/${tournament.id}/matches`],
+    refetchInterval: 5000, // Poll for updates every 5 seconds
+  });
+
+  const updateMatchMutation = useMutation({
+    mutationFn: async ({ matchId, data }: { matchId: number; data: UpdateMatchForm }) => {
+      await apiRequest("PATCH", `/api/matches/${matchId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournament.id}/matches`] });
+      toast({
+        title: "Match updated",
+        description: "The match scores have been updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update match",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -35,6 +72,75 @@ export default function Bracket({ tournament }: BracketProps) {
     acc[roundIndex].push(match);
     return acc;
   }, []);
+
+  const EditMatchDialog = ({ match }: { match: MatchWithPlayers }) => {
+    const form = useForm<UpdateMatchForm>({
+      defaultValues: {
+        score1: match.score1,
+        score2: match.score2,
+      },
+    });
+
+    const onSubmit = (data: UpdateMatchForm) => {
+      updateMatchMutation.mutate({ matchId: match.id, data });
+    };
+
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+            <Edit className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Match Score</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="score1"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{match.player1?.fullName || 'Player 1'}</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="score2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{match.player2?.fullName || 'Player 2'}</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={updateMatchMutation.isPending}
+              >
+                {updateMatchMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Update Score'
+                )}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <div className="overflow-x-auto">
@@ -64,6 +170,9 @@ export default function Bracket({ tournament }: BracketProps) {
                         match.status === 'completed' ? 'border-primary/50' : ''
                       }`}
                     >
+                      {isAdmin && match.status !== 'completed' && (
+                        <EditMatchDialog match={match} />
+                      )}
                       <CardContent className="p-4">
                         <div className="space-y-2">
                           <motion.div
