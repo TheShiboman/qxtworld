@@ -82,24 +82,6 @@ export default function Bracket({ tournament }: BracketProps) {
     },
   });
 
-  const lockMatchMutation = useMutation({
-    mutationFn: async (matchId: number) => {
-      await apiRequest("POST", `/api/matches/${matchId}/lock`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournament.id}/matches`] });
-    },
-  });
-
-  const unlockMatchMutation = useMutation({
-    mutationFn: async (matchId: number) => {
-      await apiRequest("POST", `/api/matches/${matchId}/unlock`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournament.id}/matches`] });
-    },
-  });
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -142,8 +124,6 @@ export default function Bracket({ tournament }: BracketProps) {
             variant="ghost" 
             size="icon" 
             className="absolute top-2 right-2"
-            // Allow editing at any time
-            disabled={!isAdmin && !isReferee && (form.getValues('score1') !== undefined || form.getValues('score2') !== undefined)}
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -384,9 +364,7 @@ export default function Bracket({ tournament }: BracketProps) {
                         match.status === 'completed' ? 'border-primary/50' : ''
                       }`}
                     >
-                      {isAdmin && match.status !== 'completed' && (
-                        <EditMatchDialog match={match} />
-                      )}
+                      <EditMatchDialog match={match} />
                       <CardContent className="p-4">
                         <div className="space-y-2">
                           <motion.div

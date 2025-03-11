@@ -12,6 +12,7 @@ export class TournamentService {
         throw new Error("Tournament not found");
       }
 
+      // Get and validate participants
       const registrations = await storage.getTournamentRegistrations(tournamentId);
       if (registrations.length < 2) {
         throw new Error("Not enough participants to start tournament");
@@ -47,8 +48,11 @@ export class TournamentService {
           endTime: null,
           winner: null,
           isWinnersBracket: true,
-          frameCount: 5,
-          canDraw: true
+          frameCount: 5, // Default frame count
+          canDraw: true, // Allow draws by default
+          tableNumber: null,
+          refereeId: null,
+          notes: ''
         });
       }
 
@@ -59,7 +63,7 @@ export class TournamentService {
             status: 'in_progress',
             currentRound: 1,
             totalRounds: rounds,
-            bracket: JSON.stringify(firstRoundMatches)
+            bracket: firstRoundMatches
           })
           .where(eq(tournaments.id, tournamentId));
 
@@ -118,8 +122,6 @@ export class TournamentService {
             winner,
             lastEditedBy: userId,
             lastEditedAt: new Date(),
-            // Only set status to completed if scores are being updated
-            ...(data.score1 !== undefined ? { status: 'completed' } : {}),
           })
           .where(eq(matches.id, matchId));
 
@@ -141,7 +143,6 @@ export class TournamentService {
       throw error;
     }
   }
-
   static async lockMatch(matchId: number, userRole: string): Promise<void> {
     if (userRole !== 'admin') {
       throw new Error("Only administrators can lock matches");
