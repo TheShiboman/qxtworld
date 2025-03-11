@@ -31,10 +31,15 @@ export const matches = pgTable("matches", {
   matchNumber: integer("match_number").notNull(),
   nextMatchNumber: integer("next_match_number"), 
   isWinnersBracket: boolean("is_winners_bracket").default(true),
-  // New fields for match management
+  // Match management fields
   frameCount: integer("frame_count").default(5),
   refereeId: integer("referee_id"),
-  canDraw: boolean("can_draw").default(false)
+  canDraw: boolean("can_draw").default(false),
+  tableNumber: integer("table_number"),
+  lastEditedBy: integer("last_edited_by"),
+  lastEditedAt: timestamp("last_edited_at"),
+  notes: text("notes"),
+  isLocked: boolean("is_locked").default(false)
 });
 
 export const tournaments = pgTable("tournaments", {

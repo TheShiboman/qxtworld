@@ -66,7 +66,7 @@ export class TournamentService {
   }
 
   static async updateMatchResult(
-    matchId: number, 
+    matchId: number,
     data: {
       score1: number;
       score2: number;
@@ -74,47 +74,52 @@ export class TournamentService {
       refereeId?: number;
       startTime?: Date;
       canDraw?: boolean;
-    }
+      tableNumber?: number;
+      notes?: string;
+    },
+    userId: number,
+    userRole: string
   ): Promise<void> {
     try {
-      // Get current match
       const match = await storage.getMatch(matchId);
       if (!match) {
         throw new Error("Match not found");
       }
 
+      // Only admins can edit locked/completed matches
+      if (match.isLocked && userRole !== 'admin') {
+        throw new Error("Match is locked. Only administrators can edit locked matches.");
+      }
+
+      // Only admins and referees can update scores
+      if ((data.score1 !== undefined || data.score2 !== undefined) && 
+          userRole !== 'admin' && userRole !== 'referee') {
+        throw new Error("Only administrators and referees can update match scores.");
+      }
+
       // Determine winner or draw
       let winner: number | null = null;
-      if (!data.canDraw) {
-        winner = data.score1 > data.score2 ? match.player1Id : match.player2Id;
-      } else if (data.score1 === data.score2) {
-        winner = null; // Draw
-      } else {
+      if (!data.canDraw || data.score1 !== data.score2) {
         winner = data.score1 > data.score2 ? match.player1Id : match.player2Id;
       }
 
-      // Update match result
       await db.transaction(async (tx) => {
-        // Update current match
+        // Update match
         await tx.update(matches)
           .set({
-            score1: data.score1,
-            score2: data.score2,
-            frameCount: data.frameCount,
-            refereeId: data.refereeId,
-            startTime: data.startTime,
-            canDraw: data.canDraw,
+            ...data,
             winner,
-            status: 'completed',
-            endTime: new Date()
+            lastEditedBy: userId,
+            lastEditedAt: new Date(),
+            // Only set status to completed if scores are being updated
+            ...(data.score1 !== undefined ? { status: 'completed' } : {}),
           })
           .where(eq(matches.id, matchId));
 
-        // If there's a next match and we have a winner, update it
-        if (match.nextMatchNumber && winner) {
+        // If we have a winner and next match exists, update it
+        if (winner && match.nextMatchNumber) {
           const nextMatch = await storage.getMatchByNumber(match.tournamentId, match.nextMatchNumber);
           if (nextMatch) {
-            // Update next match with winner
             await tx.update(matches)
               .set(nextMatch.player1Id === 0 
                 ? { player1Id: winner }
@@ -128,5 +133,25 @@ export class TournamentService {
       console.error('[updateMatchResult] Error:', error);
       throw error;
     }
+  }
+
+  static async lockMatch(matchId: number, userRole: string): Promise<void> {
+    if (userRole !== 'admin') {
+      throw new Error("Only administrators can lock matches");
+    }
+
+    await db.update(matches)
+      .set({ isLocked: true })
+      .where(eq(matches.id, matchId));
+  }
+
+  static async unlockMatch(matchId: number, userRole: string): Promise<void> {
+    if (userRole !== 'admin') {
+      throw new Error("Only administrators can unlock matches");
+    }
+
+    await db.update(matches)
+      .set({ isLocked: false })
+      .where(eq(matches.id, matchId));
   }
 }

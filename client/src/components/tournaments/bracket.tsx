@@ -27,6 +27,9 @@ interface MatchWithPlayers extends Match {
   player1?: { id: number; fullName: string } | null;
   player2?: { id: number; fullName: string } | null;
   referee?: User | null;
+  isLocked?: boolean; //Added isLocked field
+  notes?: string; //Added notes field
+  tableNumber?: number | null; //Added tableNumber field
 }
 
 interface UpdateMatchForm {
@@ -36,11 +39,15 @@ interface UpdateMatchForm {
   refereeId: string;
   startTime: Date;
   canDraw: boolean;
+  tableNumber: number | null;
+  notes: string;
 }
 
 export default function Bracket({ tournament }: BracketProps) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isReferee = user?.role === 'referee';
+  const canEditScores = isAdmin || isReferee;
 
   const { data: matches = [], isLoading } = useQuery<MatchWithPlayers[]>({
     queryKey: [`/api/tournaments/${tournament.id}/matches`],
@@ -75,6 +82,24 @@ export default function Bracket({ tournament }: BracketProps) {
     },
   });
 
+  const lockMatchMutation = useMutation({
+    mutationFn: async (matchId: number) => {
+      await apiRequest("POST", `/api/matches/${matchId}/lock`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournament.id}/matches`] });
+    },
+  });
+
+  const unlockMatchMutation = useMutation({
+    mutationFn: async (matchId: number) => {
+      await apiRequest("POST", `/api/matches/${matchId}/unlock`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournament.id}/matches`] });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -101,6 +126,8 @@ export default function Bracket({ tournament }: BracketProps) {
         refereeId: match.refereeId?.toString() ?? "",
         startTime: match.startTime ? new Date(match.startTime) : new Date(),
         canDraw: match.canDraw ?? false,
+        tableNumber: match.tableNumber ?? null,
+        notes: match.notes ?? "",
       },
     });
 
@@ -111,7 +138,12 @@ export default function Bracket({ tournament }: BracketProps) {
     return (
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute top-2 right-2"
+            disabled={!isAdmin && match.isLocked}
+          >
             <Edit className="h-4 w-4" />
           </Button>
         </DialogTrigger>
@@ -121,32 +153,62 @@ export default function Bracket({ tournament }: BracketProps) {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="score1"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{match.player1?.fullName || 'Player 1'}</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="score2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{match.player2?.fullName || 'Player 2'}</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {canEditScores && (
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="score1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{match.player1?.fullName || 'Player 1'}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            value={field.value ?? ''} 
+                            onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="score2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{match.player2?.fullName || 'Player 2'}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            value={field.value ?? ''} 
+                            onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="tableNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Table Number</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ''} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -262,17 +324,45 @@ export default function Bracket({ tournament }: BracketProps) {
                 )}
               />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={updateMatchMutation.isPending}
-              >
-                {updateMatchMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Update Match'
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Match Notes</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
                 )}
-              </Button>
+              />
+
+              <div className="flex justify-between gap-4">
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={updateMatchMutation.isPending}
+                >
+                  {updateMatchMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Update Match'
+                  )}
+                </Button>
+
+                {isAdmin && match.status === 'completed' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => match.isLocked ? 
+                      unlockMatchMutation.mutate(match.id) : 
+                      lockMatchMutation.mutate(match.id)
+                    }
+                  >
+                    {match.isLocked ? 'Unlock Match' : 'Lock Match'}
+                  </Button>
+                )}
+              </div>
             </form>
           </Form>
         </DialogContent>
@@ -349,6 +439,12 @@ export default function Bracket({ tournament }: BracketProps) {
                             )}
                             {match.frameCount && (
                               <p>Best of {match.frameCount}</p>
+                            )}
+                            {match.tableNumber && (
+                              <p>Table: {match.tableNumber}</p>
+                            )}
+                            {match.notes && (
+                              <p>Notes: {match.notes}</p>
                             )}
                             {match.status === 'scheduled' && match.startTime && (
                               <motion.span
