@@ -71,9 +71,9 @@ export default function TournamentPage() {
     try {
       await apiRequest("POST", "/api/tournaments", {
         ...data,
-        participants: String(data.participants),
-        prize: String(data.prize),
-        participationFee: String(data.participationFee)
+        participants: parseInt(data.participants),
+        prize: parseInt(data.prize),
+        participationFee: parseInt(data.participationFee)
       });
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       toast({
@@ -94,7 +94,7 @@ export default function TournamentPage() {
     const isRegistered = userRegistrations.some(
       reg => reg.tournamentId === tournament.id
     );
-    const isFull = tournament.currentParticipants >= tournament.participants;
+    const isFull = tournament.currentParticipants >= parseInt(tournament.participants);
     const isDeadlinePassed = new Date(tournament.registrationDeadline) < new Date();
 
     if (isRegistered) return { status: "registered", label: "Registered" };
@@ -238,6 +238,7 @@ export default function TournamentPage() {
                       )}
                     />
                   </div>
+
                   <div className="grid grid-cols-1 gap-4">
                     <FormField
                       control={form.control}
@@ -253,6 +254,7 @@ export default function TournamentPage() {
                       )}
                     />
                   </div>
+
                   <FormField
                     control={form.control}
                     name="format"
@@ -403,23 +405,16 @@ export default function TournamentPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Tournament Bracket</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Bracket tournament={tournament} />
-              </CardContent>
-            </Card>
-            <Leaderboard tournament={tournament} />
-            <Card>
-              <CardHeader>
-                <CardTitle>Make Your Prediction</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Predictions tournament={tournament} />
-              </CardContent>
-            </Card>
+            {tournament.status === 'in_progress' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tournament Bracket</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Bracket tournament={tournament} />
+                </CardContent>
+              </Card>
+            )}
           </div>
         ))}
       </div>
