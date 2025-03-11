@@ -17,10 +17,10 @@ import { ProtectedRoute } from "./lib/protected-route";
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/tournaments/:id/live-scoring" component={LiveScoring} />
+      <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/tournaments" component={TournamentPage} />
-      <ProtectedRoute path="/live-scoring/:id" component={LiveScoring} />
       <ProtectedRoute path="/shop" component={ShopPage} />
       <ProtectedRoute path="/players" component={PlayersPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
@@ -29,16 +29,18 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Navbar />
-        <Router />
-        <Toaster />
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <main className="container mx-auto py-4">
+            <Router />
+          </main>
+          <Toaster />
+        </div>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;

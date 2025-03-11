@@ -19,7 +19,6 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
-
 interface BracketProps {
   tournament: Tournament;
 }
@@ -31,8 +30,8 @@ interface MatchWithPlayers extends Match {
 }
 
 interface UpdateMatchForm {
-  score1: number;
-  score2: number;
+  score1: number | null;
+  score2: number | null;
   frameCount: number;
   refereeId: string;
   startTime: Date;
@@ -55,7 +54,10 @@ export default function Bracket({ tournament }: BracketProps) {
 
   const updateMatchMutation = useMutation({
     mutationFn: async ({ matchId, data }: { matchId: number; data: UpdateMatchForm }) => {
-      await apiRequest("PATCH", `/api/matches/${matchId}`, data);
+      await apiRequest("PATCH", `/api/matches/${matchId}`, {
+        ...data,
+        refereeId: data.refereeId ? parseInt(data.refereeId) : null,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tournaments/${tournament.id}/matches`] });
@@ -75,7 +77,7 @@ export default function Bracket({ tournament }: BracketProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center min-h-[200px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -93,12 +95,12 @@ export default function Bracket({ tournament }: BracketProps) {
   const EditMatchDialog = ({ match }: { match: MatchWithPlayers }) => {
     const form = useForm<UpdateMatchForm>({
       defaultValues: {
-        score1: match.score1,
-        score2: match.score2,
-        frameCount: match.frameCount || 5,
-        refereeId: match.refereeId?.toString() || "",
+        score1: match.score1 ?? 0,
+        score2: match.score2 ?? 0,
+        frameCount: match.frameCount ?? 5,
+        refereeId: match.refereeId?.toString() ?? "",
         startTime: match.startTime ? new Date(match.startTime) : new Date(),
-        canDraw: match.canDraw || false,
+        canDraw: match.canDraw ?? false,
       },
     });
 
@@ -127,7 +129,7 @@ export default function Bracket({ tournament }: BracketProps) {
                     <FormItem>
                       <FormLabel>{match.player1?.fullName || 'Player 1'}</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} />
                       </FormControl>
                     </FormItem>
                   )}
@@ -139,7 +141,7 @@ export default function Bracket({ tournament }: BracketProps) {
                     <FormItem>
                       <FormLabel>{match.player2?.fullName || 'Player 2'}</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} />
                       </FormControl>
                     </FormItem>
                   )}
@@ -153,7 +155,7 @@ export default function Bracket({ tournament }: BracketProps) {
                   <FormItem>
                     <FormLabel>Best of Frames</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => field.onChange(parseInt(value))}
                       defaultValue={field.value.toString()}
                     >
                       <FormControl>
@@ -292,7 +294,7 @@ export default function Bracket({ tournament }: BracketProps) {
             <div className="mb-4 text-sm font-medium text-muted-foreground">
               Round {roundIndex + 1}
             </div>
-            {round.map((match, matchIndex) => (
+            {round.map((match) => (
               <div key={match.id} className="relative">
                 <AnimatePresence>
                   <motion.div
@@ -323,7 +325,7 @@ export default function Bracket({ tournament }: BracketProps) {
                               {match.player1?.fullName || 'TBD'}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {match.score1}
+                              {match.score1 ?? 0}
                             </p>
                           </motion.div>
                           <motion.div
@@ -338,7 +340,7 @@ export default function Bracket({ tournament }: BracketProps) {
                               {match.player2?.fullName || 'TBD'}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {match.score2}
+                              {match.score2 ?? 0}
                             </p>
                           </motion.div>
                           <div className="text-xs text-muted-foreground mt-2">
