@@ -153,8 +153,12 @@ export function setupAuth(app: Express) {
       const hashedPassword = await hashPassword(userData.password);
       console.log("Creating new user with hashed password");
 
+      // Set role to admin if username contains 'admin'
+      const role = userData.username.toLowerCase().includes('admin') ? 'admin' : 'player';
+
       const user = await storage.createUser({
         ...userData,
+        role, // Use the determined role
         password: hashedPassword,
       });
 
