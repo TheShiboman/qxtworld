@@ -102,12 +102,16 @@ export default function TournamentPage() {
         contactPhone: "",
         website: ""
       }
-    }
+    },
+    mode: "onChange"
   });
 
   const onSubmit = async (values: any) => {
     try {
-      console.log('Raw form data:', values);
+      // Log form state for debugging
+      console.log('Form state:', form.formState);
+      console.log('Form errors:', form.formState.errors);
+      console.log('Submitting values:', values);
 
       const formattedData = {
         name: values.name,
@@ -134,16 +138,13 @@ export default function TournamentPage() {
         }
       };
 
-      console.log('Formatted tournament data:', formattedData);
-
       const response = await apiRequest("POST", "/api/tournaments", formattedData);
-      const responseData = await response.json();
-
       if (!response.ok) {
-        throw new Error(responseData.message || 'Failed to create tournament');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create tournament');
       }
 
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       toast({
         title: "Success",
         description: "Tournament created successfully.",
@@ -159,18 +160,6 @@ export default function TournamentPage() {
       });
     }
   };
-
-  const ongoing = tournaments.filter(t => t.status === 'in_progress');
-  const upcoming = tournaments.filter(t => t.status === 'upcoming');
-  const past = tournaments.filter(t => t.status === 'completed');
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
 
@@ -250,6 +239,18 @@ export default function TournamentPage() {
     return null;
   };
 
+  const ongoing = tournaments.filter(t => t.status === 'in_progress');
+  const upcoming = tournaments.filter(t => t.status === 'upcoming');
+  const past = tournaments.filter(t => t.status === 'completed');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -260,12 +261,15 @@ export default function TournamentPage() {
               <DialogTrigger asChild>
                 <Button>Create Tournament</Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Tournament</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <form 
+                    onSubmit={form.handleSubmit(onSubmit)} 
+                    className="space-y-6"
+                  >
                     <FormField
                       control={form.control}
                       name="name"
@@ -553,9 +557,30 @@ export default function TournamentPage() {
                       )}
                     />
 
-                    <Button type="submit" className="w-full">
-                      Create Tournament
-                    </Button>
+                    <div className="space-y-4">
+                      {Object.keys(form.formState.errors).length > 0 && (
+                        <div className="text-sm text-destructive space-y-1">
+                          <p>Please fix the following errors:</p>
+                          {Object.entries(form.formState.errors).map(([key, error]: [string, any]) => (
+                            <p key={key}>• {error.message}</p>
+                          ))}
+                        </div>
+                      )}
+                      <Button 
+                        type="submit" 
+                        className="w-full"
+                        disabled={form.formState.isSubmitting}
+                      >
+                        {form.formState.isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          'Create Tournament'
+                        )}
+                      </Button>
+                    </div>
                   </form>
                 </Form>
               </DialogContent>
@@ -710,7 +735,8 @@ export default function TournamentPage() {
                                   variant: "destructive"
                                 });
                               }
-                            }}                            >
+                            }}
+                          >
                             Start Tournament
                           </Button>
                         )}
