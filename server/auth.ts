@@ -16,9 +16,17 @@ declare global {
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  try {
+    console.log("Generating salt and hashing password...");
+    const salt = randomBytes(16).toString("hex");
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    const hashedPassword = `${buf.toString("hex")}.${salt}`;
+    console.log("Password hashed successfully");
+    return hashedPassword;
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    throw error;
+  }
 }
 
 async function comparePasswords(supplied: string, stored: string) {
@@ -133,12 +141,15 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      console.log("Registration attempt for username:", req.body.username);
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
+        console.log("Username already exists:", req.body.username);
         return res.status(400).json({ message: "Username already exists" });
       }
 
       const { passwordConfirm, ...userData } = req.body;
+      console.log("Hashing password for new user");
       const hashedPassword = await hashPassword(userData.password);
       console.log("Creating new user with hashed password");
 
@@ -149,10 +160,12 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) {
+          console.error("Login error after registration:", err);
           return next(err);
         }
         // Only send non-sensitive user data
         const { password, ...safeUser } = user;
+        console.log("User registered successfully:", safeUser);
         res.status(201).json(safeUser);
       });
     } catch (error) {
