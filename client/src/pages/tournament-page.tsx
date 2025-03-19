@@ -59,8 +59,8 @@ export default function TournamentPage() {
       country: "",
       city: "",
       tableCounts: {
-        snooker: 0,
-        pool: 0
+        snooker: "0",
+        pool: "0"
       },
       contactDetails: {
         email: "",
@@ -69,6 +69,32 @@ export default function TournamentPage() {
       }
     }
   });
+
+  const onVenueSubmit = async (data: any) => {
+    try {
+      await apiRequest("POST", "/api/venues", data);
+      refetchVenues();
+      toast({
+        title: "Success",
+        description: "Venue registered successfully.",
+      });
+      venueForm.reset();
+      const dialogElement = document.querySelector('[role="dialog"]');
+      if (dialogElement) {
+        const closeButton = dialogElement.querySelector('button[aria-label="Close"]');
+        if (closeButton) {
+          (closeButton as HTMLButtonElement).click();
+        }
+      }
+    } catch (error: any) {
+      console.error("Failed to register venue:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to register venue. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const onSubmit = async (data: any) => {
     try {
@@ -102,41 +128,6 @@ export default function TournamentPage() {
     }
   };
 
-  const onVenueSubmit = async (data: any) => {
-    try {
-      // Transform the table counts to numbers
-      const formattedData = {
-        ...data,
-        tableCounts: {
-          snooker: parseInt(data.tableCounts.snooker) || 0,
-          pool: parseInt(data.tableCounts.pool) || 0
-        }
-      };
-
-      await apiRequest("POST", "/api/venues", formattedData);
-      refetchVenues();
-      toast({
-        title: "Success",
-        description: "Venue registered successfully.",
-      });
-      venueForm.reset();
-      // Close the dialog after successful submission
-      const dialogElement = document.querySelector('[role="dialog"]');
-      if (dialogElement) {
-        const closeButton = dialogElement.querySelector('button[aria-label="Close"]');
-        if (closeButton) {
-          (closeButton as HTMLButtonElement).click();
-        }
-      }
-    } catch (error: any) {
-      console.error("Failed to register venue:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to register venue. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const ongoing = tournaments.filter(t => t.status === 'in_progress');
   const upcoming = tournaments.filter(t => t.status === 'upcoming');
@@ -972,7 +963,7 @@ export default function TournamentPage() {
                           <span className="text-sm">
                             {new Date(tournament.startDate).toLocaleDateString()} -
                             {new Date(tournament.endDate).toLocaleDateString()}
-                                                    </span>
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-muted-foreground" />

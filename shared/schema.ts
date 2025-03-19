@@ -231,8 +231,8 @@ export const insertTournamentRegistrationSchema = createInsertSchema(tournamentR
 
 export const insertVenueSchema = createInsertSchema(venues).extend({
   tableCounts: z.object({
-    snooker: z.number().min(0),
-    pool: z.number().min(0)
+    snooker: z.string().transform((str) => parseInt(str, 10) || 0),
+    pool: z.string().transform((str) => parseInt(str, 10) || 0)
   }),
   contactDetails: z.object({
     email: z.string().email("Invalid email address"),
