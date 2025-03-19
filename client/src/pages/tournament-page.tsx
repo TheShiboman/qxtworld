@@ -102,11 +102,20 @@ export default function TournamentPage() {
         contactPhone: "",
         website: ""
       }
-    }
+    },
+    mode: "all"
   });
 
   const onSubmit = async (values: any) => {
     try {
+      if (!values.organizerDetails.contactPhone) {
+        form.setError("organizerDetails.contactPhone", {
+          type: "required",
+          message: "Contact phone is required"
+        });
+        return;
+      }
+
       const formattedData = {
         name: values.name,
         discipline: values.discipline,
@@ -260,10 +269,7 @@ export default function TournamentPage() {
                   <DialogTitle>Create New Tournament</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
-                  <form 
-                    onSubmit={form.handleSubmit(onSubmit)} 
-                    className="space-y-6"
-                  >
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
                       control={form.control}
                       name="name"
@@ -557,7 +563,7 @@ export default function TournamentPage() {
                           <p>Please fix the following errors:</p>
                           {Object.entries(form.formState.errors).map(([key, error]: [string, any]) => {
                             const errorMessage = error.message || 
-                              (key === "organizerDetails" ? "Please fill in all organizer contact details" : 
+                              (key.includes("organizerDetails") ? "Please fill in all organizer contact details" : 
                                `${key.charAt(0).toUpperCase() + key.slice(1)} is required`);
                             return (
                               <p key={key}>• {errorMessage}</p>
@@ -565,8 +571,8 @@ export default function TournamentPage() {
                           })}
                         </div>
                       )}
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         className="w-full"
                         disabled={form.formState.isSubmitting}
                       >
@@ -584,7 +590,7 @@ export default function TournamentPage() {
                 </Form>
               </DialogContent>
             </Dialog>
-            <VenueDialog 
+            <VenueDialog
               open={venueDialogOpen}
               onOpenChange={setVenueDialogOpen}
               onSuccess={refetchVenues}
