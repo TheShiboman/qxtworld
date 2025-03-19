@@ -488,12 +488,12 @@ export default function TournamentPage() {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description<span className="text-destructive">*</span></FormLabel>
+                          <FormLabel>Description</FormLabel>
                           <FormControl>
                             <textarea
                               {...field}
                               className="w-full p-2 border rounded-md bg-background min-h-[100px]"
-                              placeholder="Enter tournament description (required)"
+                              placeholder="Enter tournament description"
                             />
                           </FormControl>
                           <FormMessage />
@@ -506,9 +506,9 @@ export default function TournamentPage() {
                       name="organizerDetails.contactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Phone<span className="text-destructive">*</span></FormLabel>
+                          <FormLabel>Contact Phone</FormLabel>
                           <FormControl>
-                            <Input type="tel" {...field} placeholder="Enter contact phone (required)" />
+                            <Input type="tel" {...field} placeholder="Enter contact phone" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -522,9 +522,9 @@ export default function TournamentPage() {
                         <FormItem>
                           <FormLabel>Website (Optional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="url" 
-                              {...field} 
+                            <Input
+                              type="url"
+                              {...field}
                               placeholder="Enter website URL (optional)"
                               value={field.value || ''}
                             />

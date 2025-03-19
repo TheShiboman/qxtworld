@@ -213,19 +213,12 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   participants: z.string().transform((str) => parseInt(str, 10)),
   prize: z.string().transform((str) => parseInt(str, 10)),
   participationFee: z.string().transform((str) => parseInt(str, 10)),
-  description: z.string().min(1, "Description is required"),
+  description: z.string().optional(),
   venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address").min(1, "Contact email is required"),
-    contactPhone: z.string().min(1, "Contact phone is required"),
+    contactPhone: z.string().optional(),
     website: z.string().url("Invalid website URL").optional().or(z.literal('')).or(z.null())
-  }, {
-    required_error: "Please fill in all required organizer contact details"
-  }).refine((data) => {
-    return data.contactEmail && data.contactPhone;
-  }, {
-    message: "Please fill in all required organizer contact details",
-    path: ["organizerDetails"]
   })
 });
 
