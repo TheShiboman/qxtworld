@@ -237,7 +237,7 @@ export const insertVenueSchema = createInsertSchema(venues).extend({
   contactDetails: z.object({
     email: z.string().email("Invalid email address"),
     phone: z.string(),
-    website: z.string().url("Invalid website URL").optional()
+    website: z.string().url("Invalid website URL").optional().or(z.literal(''))
   })
 });
 
