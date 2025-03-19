@@ -8,14 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Tournament, insertTournamentSchema, disciplineTypes, tournamentFormats, insertVenueSchema } from "@shared/schema";
+import { Tournament, insertTournamentSchema, disciplineTypes, tournamentFormats } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from "lucide-react";
+import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { cueSportsDisciplines, matchTypes } from "@shared/schema";
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VenueDialog } from "@/components/venue-dialog";
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -29,114 +30,6 @@ export default function TournamentPage() {
   const { data: venues = [], refetch: refetchVenues } = useQuery({
     queryKey: ["/api/venues"],
   });
-
-  const form = useForm({
-    resolver: zodResolver(insertTournamentSchema),
-    defaultValues: {
-      name: "",
-      discipline: "Snooker",
-      disciplineType: "Full Reds",
-      matchType: "Single",
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      format: "Single Elimination",
-      participants: "8",
-      prize: "1000",
-      participationFee: "0",
-      description: "",
-      organizerDetails: {
-        contactEmail: "",
-        contactPhone: "",
-        website: ""
-      }
-    }
-  });
-
-  const venueForm = useForm({
-    resolver: zodResolver(insertVenueSchema),
-    defaultValues: {
-      name: "",
-      address: "",
-      country: "",
-      city: "",
-      tableCounts: {
-        snooker: "0",
-        pool: "0"
-      },
-      contactDetails: {
-        email: "",
-        phone: "",
-        website: ""
-      }
-    }
-  });
-
-  const onVenueSubmit = async (values: any) => {
-    try {
-      console.log('Submitting venue data:', values);
-      await apiRequest("POST", "/api/venues", values);
-      await refetchVenues();
-      toast({
-        title: "Success",
-        description: "Venue registered successfully.",
-      });
-      venueForm.reset();
-      setVenueDialogOpen(false);
-    } catch (error: any) {
-      console.error("Failed to register venue:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to register venue. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const onSubmit = async (data: any) => {
-    try {
-      await apiRequest("POST", "/api/tournaments", {
-        ...data,
-        organizerId: user!.id,
-        participants: parseInt(data.participants),
-        prize: parseInt(data.prize),
-        participationFee: parseInt(data.participationFee)
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
-      toast({
-        title: "Success",
-        description: "Tournament created successfully.",
-      });
-      setTournamentDialogOpen(false); //added this line
-
-    } catch (error: any) {
-      console.error("Failed to create tournament:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create tournament. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-
-  const ongoing = tournaments.filter(t => t.status === 'in_progress');
-  const upcoming = tournaments.filter(t => t.status === 'upcoming');
-  const past = tournaments.filter(t => t.status === 'completed');
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
-
-  React.useEffect(() => {
-    form.setValue("disciplineType", disciplineTypes[selectedDiscipline][0]);
-  }, [selectedDiscipline, form]);
 
   const { data: registeredPlayers = [] } = useQuery({
     queryKey: ["/api/tournaments", "registrations"],
@@ -188,6 +81,72 @@ export default function TournamentPage() {
     }
   });
 
+  const form = useForm({
+    resolver: zodResolver(insertTournamentSchema),
+    defaultValues: {
+      name: "",
+      discipline: "Snooker",
+      disciplineType: "Full Reds",
+      matchType: "Single",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      format: "Single Elimination",
+      participants: "8",
+      prize: "1000",
+      participationFee: "0",
+      description: "",
+      organizerDetails: {
+        contactEmail: "",
+        contactPhone: "",
+        website: ""
+      }
+    }
+  });
+
+  const onSubmit = async (data: any) => {
+    try {
+      await apiRequest("POST", "/api/tournaments", {
+        ...data,
+        organizerId: user!.id,
+        participants: parseInt(data.participants),
+        prize: parseInt(data.prize),
+        participationFee: parseInt(data.participationFee)
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      toast({
+        title: "Success",
+        description: "Tournament created successfully.",
+      });
+      setTournamentDialogOpen(false);
+    } catch (error: any) {
+      console.error("Failed to create tournament:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create tournament. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const ongoing = tournaments.filter(t => t.status === 'in_progress');
+  const upcoming = tournaments.filter(t => t.status === 'upcoming');
+  const past = tournaments.filter(t => t.status === 'completed');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
+
+  React.useEffect(() => {
+    form.setValue("disciplineType", disciplineTypes[selectedDiscipline][0]);
+  }, [selectedDiscipline, form]);
+
   const renderRegistrationButtons = (tournament: Tournament) => {
     if (user?.role === 'admin' || user?.role === 'referee') {
       return (
@@ -220,27 +179,26 @@ export default function TournamentPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Registered Players</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Registration Date</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Player</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {registeredPlayers.map((registration: any) => (
+                    <TableRow key={registration.id}>
+                      <TableCell>{registration.user?.fullName || registration.user?.username}</TableCell>
+                      <TableCell className="capitalize">{registration.status}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm">Remove</Button>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {registeredPlayers.map((registration: any) => (
-                      <TableRow key={registration.id}>
-                        <TableCell>{registration.user?.fullName || registration.user?.username}</TableCell>
-                        <TableCell className="capitalize">{registration.status}</TableCell>
-                        <TableCell>{new Date(registration.registeredAt).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </DialogContent>
         </Dialog>
@@ -254,7 +212,7 @@ export default function TournamentPage() {
             new Date(tournament.registrationDeadline) < new Date()
           }
         >
-          Register Now
+          Register
         </Button>
       );
     }
@@ -267,7 +225,7 @@ export default function TournamentPage() {
         <h1 className="text-4xl font-bold">Tournaments & Matches</h1>
         {(user?.role === "admin" || user?.role === "referee") && (
           <div className="flex gap-2">
-            <Dialog open={tournamentDialogOpen} onOpenChange={setTournamentDialogOpen}> {/*Added this line*/}
+            <Dialog open={tournamentDialogOpen} onOpenChange={setTournamentDialogOpen}>
               <DialogTrigger asChild>
                 <Button>Create Tournament</Button>
               </DialogTrigger>
@@ -435,151 +393,6 @@ export default function TournamentPage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-medium">Venue Details</h3>
-                        <Dialog open={venueDialogOpen} onOpenChange={setVenueDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Plus className="h-4 w-4 mr-2" />
-                              Register New Venue
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Register New Venue</DialogTitle>
-                            </DialogHeader>
-                            <Form {...venueForm}>
-                              <form onSubmit={venueForm.handleSubmit(onVenueSubmit)} className="space-y-6">
-                                <FormField
-                                  control={venueForm.control}
-                                  name="name"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Venue Name</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                <div className="grid grid-cols-2 gap-4">
-                                  <FormField
-                                    control={venueForm.control}
-                                    name="country"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Country</FormLabel>
-                                        <FormControl>
-                                          <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={venueForm.control}
-                                    name="city"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>City</FormLabel>
-                                        <FormControl>
-                                          <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </div>
-                                <FormField
-                                  control={venueForm.control}
-                                  name="address"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Address</FormLabel>
-                                      <FormControl>
-                                        <Input {...field} />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                <div className="space-y-4">
-                                  <h4 className="text-sm font-medium">Table Count</h4>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                      control={venueForm.control}
-                                      name="tableCounts.snooker"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Snooker Tables</FormLabel>
-                                          <FormControl>
-                                            <Input type="number" {...field} min="0" />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                    <FormField
-                                      control={venueForm.control}
-                                      name="tableCounts.pool"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Pool Tables</FormLabel>
-                                          <FormControl>
-                                            <Input type="number" {...field} min="0" />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="space-y-4">
-                                  <h4 className="text-sm font-medium">Contact Details</h4>
-                                  <FormField
-                                    control={venueForm.control}
-                                    name="contactDetails.email"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                          <Input type="email" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={venueForm.control}
-                                    name="contactDetails.phone"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Phone</FormLabel>
-                                        <FormControl>
-                                          <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={venueForm.control}
-                                    name="contactDetails.website"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Website</FormLabel>
-                                        <FormControl>
-                                          <Input {...field} placeholder="https://" />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </div>
-                                <Button type="submit" className="w-full">Register Venue</Button>
-                              </form>
-                            </Form>
-                          </DialogContent>
-                        </Dialog>
                       </div>
                       <FormField
                         control={form.control}
@@ -716,157 +529,16 @@ export default function TournamentPage() {
                 </Form>
               </DialogContent>
             </Dialog>
-
-            <Dialog open={venueDialogOpen} onOpenChange={setVenueDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Register New Venue
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Register New Venue</DialogTitle>
-                </DialogHeader>
-                <Form {...venueForm}>
-                  <form onSubmit={venueForm.handleSubmit(onVenueSubmit)} className="space-y-6">
-                    <FormField
-                      control={venueForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Venue Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={venueForm.control}
-                        name="country"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Country</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={venueForm.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={venueForm.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium">Table Count</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={venueForm.control}
-                          name="tableCounts.snooker"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Snooker Tables</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} min="0" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={venueForm.control}
-                          name="tableCounts.pool"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Pool Tables</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} min="0" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium">Contact Details</h4>
-                      <FormField
-                        control={venueForm.control}
-                        name="contactDetails.email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={venueForm.control}
-                        name="contactDetails.phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={venueForm.control}
-                        name="contactDetails.website"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Website</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="https://" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <Button type="submit" className="w-full">Register Venue</Button>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+            <VenueDialog 
+              open={venueDialogOpen}
+              onOpenChange={setVenueDialogOpen}
+              onSuccess={refetchVenues}
+            />
           </div>
         )}
       </div>
 
-      <Tabs defaultValue="ongoing" className="space-y-6">
+      <Tabs defaultValue="upcoming" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="ongoing" className="flex items-center gap-2">
             <Timer className="h-4 w-4" />
