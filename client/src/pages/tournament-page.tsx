@@ -105,39 +105,42 @@ export default function TournamentPage() {
     }
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (values: any) => {
     try {
+      console.log('Raw form data:', values);
+
       const formattedData = {
-        name: data.name,
-        discipline: data.discipline,
-        disciplineType: data.disciplineType,
-        matchType: data.matchType,
+        name: values.name,
+        discipline: values.discipline,
+        disciplineType: values.disciplineType,
+        matchType: values.matchType,
         organizerId: user!.id,
-        venueId: data.venueId ? parseInt(data.venueId) : undefined,
-        startDate: new Date(data.startDate).toISOString(),
-        endDate: new Date(data.endDate).toISOString(),
+        venueId: values.venueId ? parseInt(values.venueId) : undefined,
+        startDate: new Date(values.startDate).toISOString(),
+        endDate: new Date(values.endDate).toISOString(),
         status: "upcoming",
-        format: data.format,
-        participants: parseInt(data.participants),
-        registrationDeadline: new Date(data.registrationDeadline).toISOString(),
+        format: values.format,
+        participants: parseInt(values.participants),
+        registrationDeadline: new Date(values.registrationDeadline).toISOString(),
         currentParticipants: 0,
-        prize: parseInt(data.prize),
-        participationFee: parseInt(data.participationFee),
-        description: data.description || "",
-        type: data.matchType,
+        prize: parseInt(values.prize),
+        participationFee: parseInt(values.participationFee),
+        description: values.description || "",
+        type: values.matchType,
         organizerDetails: {
-          contactEmail: data.organizerDetails.contactEmail,
-          contactPhone: data.organizerDetails.contactPhone || "",
-          website: data.organizerDetails.website || ""
+          contactEmail: values.organizerDetails.contactEmail || user?.email || "",
+          contactPhone: values.organizerDetails.contactPhone || "",
+          website: values.organizerDetails.website || ""
         }
       };
 
-      console.log('Attempting to create tournament with data:', formattedData);
+      console.log('Formatted tournament data:', formattedData);
 
       const response = await apiRequest("POST", "/api/tournaments", formattedData);
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error('Failed to create tournament. Please check all required fields.');
+        throw new Error(responseData.message || 'Failed to create tournament');
       }
 
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
