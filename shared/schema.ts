@@ -2,7 +2,7 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Add cue sports disciplines
+// Keep the existing type definitions
 export const cueSportsDisciplines = [
   'Snooker',
   'American Pool',
@@ -15,7 +15,6 @@ export const cueSportsDisciplines = [
 
 export type CueSportsDiscipline = typeof cueSportsDisciplines[number];
 
-// Add discipline types configuration
 export const disciplineTypes = {
   Snooker: ['Full Reds', 'Six Reds'],
   'American Pool': ['8 Ball', '9 Ball', '10 Ball', 'Straight Pool'],
@@ -68,7 +67,6 @@ export const matches = pgTable("matches", {
   isLocked: boolean("is_locked").default(false)
 });
 
-// Add match types configuration
 export const matchTypes = [
   'Single',
   'Doubles',
@@ -79,7 +77,6 @@ export const matchTypes = [
 
 export type MatchType = typeof matchTypes[number];
 
-// Add tournament format configuration
 export const tournamentFormats = [
   'Round Robin',
   'Single Elimination',
@@ -91,7 +88,6 @@ export const tournamentFormats = [
 
 export type TournamentFormat = typeof tournamentFormats[number];
 
-// Update tournaments table with format enum
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -175,7 +171,6 @@ export const venues = pgTable("venues", {
   })
 });
 
-// Insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .pick({
     username: true,
@@ -192,28 +187,8 @@ export const insertUserSchema = createInsertSchema(users)
     path: ["passwordConfirm"],
   });
 
-// Update tournament schema validation
-export const insertTournamentSchema = createInsertSchema(tournaments)
-  .extend({
-    name: z.string().min(1, "Tournament name is required"),
-    discipline: z.enum(cueSportsDisciplines),
-    disciplineType: z.string(),
-    matchType: z.enum(matchTypes),
-    startDate: z.string().transform((str) => new Date(str)),
-    endDate: z.string().transform((str) => new Date(str)),
-    registrationDeadline: z.string().transform((str) => new Date(str)),
-    format: z.enum(tournamentFormats),
-    participants: z.string().transform((str) => parseInt(str, 10)),
-    prize: z.string().transform((str) => parseInt(str, 10)),
-    participationFee: z.string().transform((str) => parseInt(str, 10)),
-    description: z.string().optional(),
-    venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
-    organizerDetails: z.object({
-      contactEmail: z.string().optional(),
-      contactPhone: z.string().optional(),
-      website: z.string().optional()
-    }).optional().default({})
-  });
+// Basic tournament schema without complex validation
+export const insertTournamentSchema = createInsertSchema(tournaments);
 
 export const insertMatchSchema = createInsertSchema(matches);
 export const insertProductSchema = createInsertSchema(products);
