@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,11 @@ export default function TournamentPage() {
       participationFee: "0",
       description: "",
       status: "upcoming",
+      organizerDetails: {
+        contactEmail: "",
+        contactPhone: "",
+        website: ""
+      },
       currentParticipants: 0,
     }
   });
@@ -42,6 +48,7 @@ export default function TournamentPage() {
     try {
       await apiRequest("POST", "/api/tournaments", {
         ...data,
+        organizerId: user!.id, 
         participants: parseInt(data.participants),
         prize: parseInt(data.prize),
         participationFee: parseInt(data.participationFee)
@@ -85,6 +92,7 @@ export default function TournamentPage() {
             <DialogContent className="sm:max-w-[600px]">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Basic Details */}
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -117,6 +125,53 @@ export default function TournamentPage() {
                     />
                   </div>
 
+                  {/* Organizer Details */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium">Organizer Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="organizerDetails.contactEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="organizerDetails.contactPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Phone</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="organizerDetails.website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="https://" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Dates */}
                   <div className="grid grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
@@ -159,6 +214,7 @@ export default function TournamentPage() {
                     />
                   </div>
 
+                  {/* Tournament Details */}
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -175,6 +231,27 @@ export default function TournamentPage() {
                     />
                     <FormField
                       control={form.control}
+                      name="format"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tournament Format</FormLabel>
+                          <FormControl>
+                            <select {...field} className="w-full p-2 border rounded-md bg-background">
+                              <option value="single elimination">Single Elimination</option>
+                              <option value="double elimination">Double Elimination</option>
+                              <option value="round robin">Round Robin</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Prize Details */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
                       name="prize"
                       render={({ field }) => (
                         <FormItem>
@@ -186,25 +263,20 @@ export default function TournamentPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="participationFee"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Entry Fee ($)</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="format"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tournament Format</FormLabel>
-                        <FormControl>
-                          <select {...field} className="w-full p-2 border rounded-md bg-background">
-                            <option value="single elimination">Single Elimination</option>
-                            <option value="double elimination">Double Elimination</option>
-                            <option value="round robin">Round Robin</option>
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
                   <FormField
                     control={form.control}

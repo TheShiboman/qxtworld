@@ -46,6 +46,8 @@ export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
+  organizerId: integer("organizer_id").notNull(), // Reference to users table
+  venueId: integer("venue_id"), // Reference to venues table
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull().default("upcoming"),
@@ -59,7 +61,15 @@ export const tournaments = pgTable("tournaments", {
   currentRound: integer("current_round").default(1),
   totalRounds: integer("total_rounds"),
   roundStartTimes: jsonb("round_start_times").default([]), 
-  bracket: jsonb("bracket").notNull().default([])
+  bracket: jsonb("bracket").notNull().default([]),
+  rules: jsonb("rules").default([]),
+  sponsorships: jsonb("sponsorships").default([]),
+  organizerDetails: jsonb("organizer_details").notNull().default({
+    contactEmail: "",
+    contactPhone: "",
+    website: ""
+  }),
+  prizeBreakdown: jsonb("prize_breakdown").default([])
 });
 
 export const products = pgTable("products", {
@@ -91,6 +101,16 @@ export const tournamentRegistrations = pgTable("tournament_registrations", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+export const venues = pgTable("venues", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  facilities: jsonb("facilities").notNull().default([]),
+  rating: integer("rating"),
+  isVerified: boolean("is_verified").default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .pick({
@@ -114,7 +134,17 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   endDate: z.string().transform((str) => new Date(str)),
   prize: z.string().transform((str) => parseInt(str, 10)),
   participationFee: z.string().transform((str) => parseInt(str, 10)),
-  participants: z.string().transform((str) => parseInt(str, 10))
+  participants: z.string().transform((str) => parseInt(str, 10)),
+  organizerDetails: z.object({
+    contactEmail: z.string().email("Invalid email address"),
+    contactPhone: z.string().optional(),
+    website: z.string().url("Invalid website URL").optional()
+  }),
+  prizeBreakdown: z.array(z.object({
+    position: z.string(),
+    amount: z.number()
+  })).optional(),
+  rules: z.array(z.string()).optional()
 });
 
 export const insertMatchSchema = createInsertSchema(matches);
@@ -130,6 +160,7 @@ export const insertTournamentRegistrationSchema = createInsertSchema(tournamentR
   updatedAt: true
 });
 
+export const insertVenueSchema = createInsertSchema(venues);
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -142,3 +173,5 @@ export type InsertPrediction = z.infer<typeof insertPredictionSchema>;
 export type TournamentRegistration = typeof tournamentRegistrations.$inferSelect;
 export type InsertTournamentRegistration = z.infer<typeof insertTournamentRegistrationSchema>;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
+export type Venue = typeof venues.$inferSelect;
+export type InsertVenue = z.infer<typeof insertVenueSchema>;
