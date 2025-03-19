@@ -108,7 +108,7 @@ export default function TournamentPage() {
 
   const onSubmit = async (values: any) => {
     try {
-      if (!values.organizerDetails.contactPhone) {
+      if (!values.organizerDetails || !values.organizerDetails.contactPhone) {
         form.setError("organizerDetails.contactPhone", {
           type: "required",
           message: "Contact phone is required"
@@ -562,9 +562,9 @@ export default function TournamentPage() {
                         <div className="text-sm text-destructive space-y-1">
                           <p>Please fix the following errors:</p>
                           {Object.entries(form.formState.errors).map(([key, error]: [string, any]) => {
-                            const errorMessage = error.message || 
-                              (key.includes("organizerDetails") ? "Please fill in all organizer contact details" : 
-                               `${key.charAt(0).toUpperCase() + key.slice(1)} is required`);
+                            const errorMessage = error.message ||
+                              (key.includes("organizerDetails") ? "Please fill in all organizer contact details" :
+                                `${key.charAt(0).toUpperCase() + key.slice(1)} is required`);
                             return (
                               <p key={key}>• {errorMessage}</p>
                             );
