@@ -55,11 +55,23 @@ export const matches = pgTable("matches", {
   isLocked: boolean("is_locked").default(false)
 });
 
+// Add match types configuration
+export const matchTypes = [
+  'Single',
+  'Doubles',
+  'Scottish Doubles',
+  'Mixed Doubles',
+  'Teams'
+] as const;
+
+export type MatchType = typeof matchTypes[number];
+
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
   discipline: text("discipline", { enum: cueSportsDisciplines }).notNull(),
+  matchType: text("matchType", { enum: matchTypes }).notNull().default('Single'),
   organizerId: integer("organizer_id").notNull(), // Reference to users table
   venueId: integer("venue_id"), // Reference to venues table
   startDate: timestamp("start_date").notNull(),
@@ -153,6 +165,7 @@ export const insertUserSchema = createInsertSchema(users)
     path: ["passwordConfirm"],
   });
 
+// Update the tournament schema validation
 export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   registrationDeadline: z.string().transform((str) => new Date(str)),
   startDate: z.string().transform((str) => new Date(str)),
@@ -161,6 +174,7 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   participationFee: z.string().transform((str) => parseInt(str, 10)),
   participants: z.string().transform((str) => parseInt(str, 10)),
   discipline: z.enum(cueSportsDisciplines),
+  matchType: z.enum(matchTypes),
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address"),
     contactPhone: z.string().optional(),

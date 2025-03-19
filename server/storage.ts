@@ -1,5 +1,5 @@
-import { users, tournaments, matches, products, predictions, tournamentRegistrations } from "@shared/schema";
-import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction, InsertTournamentRegistration, TournamentRegistration } from "@shared/schema";
+import { users, tournaments, matches, products, predictions, tournamentRegistrations, venues } from "@shared/schema";
+import type { InsertUser, User, Tournament, Match, Product, InsertPrediction, Prediction, InsertTournamentRegistration, TournamentRegistration, Venue } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ne } from "drizzle-orm";
 import session from "express-session";
@@ -50,6 +50,7 @@ export interface IStorage {
 
   // Add new method for getting uncompleted matches
   getTournamentUncompletedMatches(tournamentId: number): Promise<Match[]>;
+  listVenues(): Promise<Venue[]>;
   sessionStore: session.Store;
 }
 
@@ -313,6 +314,10 @@ export class DatabaseStorage implements IStorage {
           ne(matches.status, 'completed')
         )
       );
+  }
+
+  async listVenues(): Promise<Venue[]> {
+    return db.select().from(venues);
   }
 }
 
