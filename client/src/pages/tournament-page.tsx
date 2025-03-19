@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -35,7 +35,6 @@ export default function TournamentPage() {
       description: "",
       status: "upcoming",
       currentParticipants: 0,
-      bracket: []
     }
   });
 
@@ -61,7 +60,6 @@ export default function TournamentPage() {
       });
     }
   };
-
 
   if (isLoading) {
     return (
@@ -181,23 +179,7 @@ export default function TournamentPage() {
                         <FormItem>
                           <FormLabel>Prize Pool ($)</FormLabel>
                           <FormControl>
-                            <Input type="number" min="0" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="participationFee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Participation Fee ($)</FormLabel>
-                          <FormControl>
-                            <Input type="number" min="0" {...field} />
+                            <Input type="number" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
