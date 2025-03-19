@@ -105,10 +105,21 @@ export const venues = pgTable("venues", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   address: text("address").notNull(),
+  country: text("country").notNull(),
+  city: text("city").notNull(),
   facilities: jsonb("facilities").notNull().default([]),
+  tableCounts: jsonb("table_counts").notNull().default({
+    snooker: 0,
+    pool: 0
+  }),
   rating: integer("rating"),
   isVerified: boolean("is_verified").default(false),
-  createdAt: timestamp("created_at").defaultNow()
+  createdAt: timestamp("created_at").defaultNow(),
+  contactDetails: jsonb("contact_details").notNull().default({
+    email: "",
+    phone: "",
+    website: ""
+  })
 });
 
 // Insert schemas
@@ -160,7 +171,17 @@ export const insertTournamentRegistrationSchema = createInsertSchema(tournamentR
   updatedAt: true
 });
 
-export const insertVenueSchema = createInsertSchema(venues);
+export const insertVenueSchema = createInsertSchema(venues).extend({
+  tableCounts: z.object({
+    snooker: z.number().min(0),
+    pool: z.number().min(0)
+  }),
+  contactDetails: z.object({
+    email: z.string().email("Invalid email address"),
+    phone: z.string(),
+    website: z.string().url("Invalid website URL").optional()
+  })
+});
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -119,7 +119,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Add new routes from edited snippet
   app.post('/api/tournaments/:id/start', async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -352,6 +351,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: "Failed to update registration" });
     }
+  });
+
+  // Add these routes after the existing tournament routes
+
+  // Venue routes
+  app.get('/api/venues', async (req, res) => {
+    const venues = await storage.listVenues();
+    res.json(venues);
+  });
+
+  app.post('/api/venues', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!['admin', 'referee'].includes(req.user!.role)) {
+      return res.status(403).json({ message: "Not authorized to register venues" });
+    }
+
+    try {
+      const validatedData = insertVenueSchema.parse(req.body);
+      const venue = await storage.createVenue(validatedData);
+      res.json(venue);
+    } catch (error) {
+      console.error("Failed to create venue:", error);
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Invalid venue data",
+          errors: error.errors
+        });
+      }
+
+      res.status(500).json({ message: "Failed to create venue" });
+    }
+  });
+
+  app.get('/api/venues/:id', async (req, res) => {
+    const venue = await storage.getVenue(parseInt(req.params.id));
+    if (!venue) return res.status(404).send('Venue not found');
+    res.json(venue);
   });
 
   return httpServer;
