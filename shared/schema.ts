@@ -2,6 +2,19 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Add cue sports disciplines
+export const cueSportsDisciplines = [
+  'Snooker',
+  'American Pool',
+  'Billiards',
+  'Black Ball',
+  'Chinese Pool',
+  'Carom',
+  'Russian Pyramid'
+] as const;
+
+export type CueSportsDiscipline = typeof cueSportsDisciplines[number];
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -46,6 +59,7 @@ export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
+  discipline: text("discipline", { enum: cueSportsDisciplines }).notNull(),
   organizerId: integer("organizer_id").notNull(), // Reference to users table
   venueId: integer("venue_id"), // Reference to venues table
   startDate: timestamp("start_date").notNull(),
@@ -146,6 +160,7 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   prize: z.string().transform((str) => parseInt(str, 10)),
   participationFee: z.string().transform((str) => parseInt(str, 10)),
   participants: z.string().transform((str) => parseInt(str, 10)),
+  discipline: z.enum(cueSportsDisciplines),
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address"),
     contactPhone: z.string().optional(),

@@ -14,7 +14,7 @@ import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { insertVenueSchema } from "@shared/schema"; // Assuming this schema exists
-
+import { cueSportsDisciplines } from "@shared/schema";
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -32,6 +32,7 @@ export default function TournamentPage() {
     defaultValues: {
       name: "",
       type: "snooker",
+      discipline: "Snooker", // Default discipline
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -147,6 +148,25 @@ export default function TournamentPage() {
                           <FormLabel>Tournament Name</FormLabel>
                           <FormControl>
                             <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="discipline"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Discipline</FormLabel>
+                          <FormControl>
+                            <select {...field} className="w-full p-2 border rounded-md bg-background">
+                              {cueSportsDisciplines.map((discipline) => (
+                                <option key={discipline} value={discipline}>
+                                  {discipline}
+                                </option>
+                              ))}
+                            </select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
