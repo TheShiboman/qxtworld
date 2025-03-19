@@ -119,9 +119,9 @@ export default function TournamentPage() {
         currentParticipants: 0,
         type: values.matchType,
         organizerDetails: {
-          contactEmail: values.organizerDetails.contactEmail || user?.email || "",
-          contactPhone: values.organizerDetails.contactPhone || "",
-          website: values.organizerDetails.website || ""
+          contactEmail: user?.email || "",
+          contactPhone: values.organizerDetails?.contactPhone || "",
+          website: values.organizerDetails?.website || ""
         }
       };
 

@@ -216,10 +216,10 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   description: z.string().optional(),
   venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
   organizerDetails: z.object({
-    contactEmail: z.string().email("Invalid email address").min(1, "Contact email is required"),
+    contactEmail: z.string().email("Invalid email address"),
     contactPhone: z.string().optional(),
-    website: z.string().url("Invalid website URL").optional().or(z.literal('')).or(z.null())
-  })
+    website: z.string().optional()
+  }).optional()
 });
 
 export const insertMatchSchema = createInsertSchema(matches);
