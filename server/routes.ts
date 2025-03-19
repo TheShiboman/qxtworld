@@ -5,7 +5,12 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import Stripe from "stripe";
 import { z } from "zod";
-import { insertTournamentSchema, insertMatchSchema, insertProductSchema } from "@shared/schema";
+import { 
+  insertTournamentSchema, 
+  insertMatchSchema, 
+  insertProductSchema, 
+  insertVenueSchema 
+} from "@shared/schema";
 import { TournamentService } from "./services/tournament-service";
 
 // Only initialize Stripe if we have the secret key
@@ -427,7 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const validatedData = insertVenueSchema.parse(req.body);
+      console.log('Attempting to create venue with data:', req.body);
+      const validatedData = await insertVenueSchema.parseAsync(req.body);
       const venue = await storage.createVenue(validatedData);
       res.json(venue);
     } catch (error) {
