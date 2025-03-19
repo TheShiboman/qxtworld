@@ -102,13 +102,11 @@ export default function TournamentPage() {
         contactPhone: "",
         website: ""
       }
-    },
-    mode: "onChange"
+    }
   });
 
   const onSubmit = async (values: any) => {
     try {
-      // Log form state for debugging
       console.log('Form state:', form.formState);
       console.log('Form errors:', form.formState.errors);
       console.log('Submitting values:', values);
@@ -561,9 +559,14 @@ export default function TournamentPage() {
                       {Object.keys(form.formState.errors).length > 0 && (
                         <div className="text-sm text-destructive space-y-1">
                           <p>Please fix the following errors:</p>
-                          {Object.entries(form.formState.errors).map(([key, error]: [string, any]) => (
-                            <p key={key}>• {error.message}</p>
-                          ))}
+                          {Object.entries(form.formState.errors).map(([key, error]: [string, any]) => {
+                            const errorMessage = error.message || 
+                              (key === "organizerDetails" ? "Please fill in all organizer contact details" : 
+                               `${key.charAt(0).toUpperCase() + key.slice(1)} is required`);
+                            return (
+                              <p key={key}>• {errorMessage}</p>
+                            );
+                          })}
                         </div>
                       )}
                       <Button 

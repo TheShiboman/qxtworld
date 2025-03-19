@@ -194,26 +194,29 @@ export const insertUserSchema = createInsertSchema(users)
 
 // Update tournament schema validation
 export const insertTournamentSchema = createInsertSchema(tournaments).extend({
-  registrationDeadline: z.string().transform((str) => new Date(str)),
+  name: z.string().min(1, "Tournament name is required"),
+  discipline: z.enum(cueSportsDisciplines, {
+    required_error: "Please select a discipline"
+  }),
+  disciplineType: z.string({
+    required_error: "Please select a discipline type"
+  }),
+  matchType: z.enum(matchTypes, {
+    required_error: "Please select a match type"
+  }),
   startDate: z.string().transform((str) => new Date(str)),
   endDate: z.string().transform((str) => new Date(str)),
+  registrationDeadline: z.string().transform((str) => new Date(str)),
   prize: z.string().transform((str) => parseInt(str, 10)),
   participationFee: z.string().transform((str) => parseInt(str, 10)),
   participants: z.string().transform((str) => parseInt(str, 10)),
-  discipline: z.enum(cueSportsDisciplines),
-  disciplineType: z.string(),
-  matchType: z.enum(matchTypes),
   venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address"),
-    contactPhone: z.string().optional(),
+    contactPhone: z.string().min(1, "Contact phone is required"),
     website: z.string().url("Invalid website URL").optional()
   }),
-  prizeBreakdown: z.array(z.object({
-    position: z.string(),
-    amount: z.number()
-  })).optional(),
-  rules: z.array(z.string()).optional(),
+  description: z.string().min(1, "Description is required"),
   format: z.enum(tournamentFormats)
 });
 
