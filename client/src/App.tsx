@@ -18,6 +18,7 @@ import AcademyPage from "@/pages/academy-page";
 import StorePage from "@/pages/store-page";
 import LiveStreamingPage from "@/pages/live-streaming-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import HelpWidget from "@/components/layout/help-widget";
 
 function Router() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
             <Router />
           </main>
           <Toaster />
+          <HelpWidget />
         </div>
       </AuthProvider>
     </QueryClientProvider>
