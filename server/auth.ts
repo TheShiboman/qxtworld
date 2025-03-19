@@ -109,6 +109,28 @@ export function setupAuth(app: Express) {
     }
   });
 
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("Authentication error:", err);
+        return next(err);
+      }
+      if (!user) {
+        console.log("Authentication failed:", info?.message);
+        return res.status(401).json({ message: info?.message || "Authentication failed" });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login error:", err);
+          return next(err);
+        }
+        // Only send non-sensitive user data
+        const { password, ...safeUser } = user;
+        res.json(safeUser);
+      });
+    })(req, res, next);
+  });
+
   app.post("/api/register", async (req, res, next) => {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
@@ -137,28 +159,6 @@ export function setupAuth(app: Express) {
       console.error("Registration error:", error);
       next(error);
     }
-  });
-
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        console.error("Authentication error:", err);
-        return next(err);
-      }
-      if (!user) {
-        console.log("Authentication failed:", info?.message);
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
-      }
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Login error:", err);
-          return next(err);
-        }
-        // Only send non-sensitive user data
-        const { password, ...safeUser } = user;
-        res.json(safeUser);
-      });
-    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
