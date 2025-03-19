@@ -16,6 +16,8 @@ import { useForm } from "react-hook-form";
 import { insertVenueSchema } from "@shared/schema";
 import { cueSportsDisciplines, matchTypes } from "@shared/schema";
 import React from 'react';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -33,13 +35,13 @@ export default function TournamentPage() {
     defaultValues: {
       name: "",
       type: "snooker",
-      discipline: "Snooker", // Default discipline
-      disciplineType: "Full Reds", // Default discipline type
-      matchType: "Single", // Default match type
+      discipline: "Snooker", 
+      disciplineType: "Full Reds", 
+      matchType: "Single", 
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      format: "Single Elimination", // Updated default format
+      format: "Single Elimination", 
       participants: "8",
       prize: "1000",
       participationFee: "0",
@@ -105,7 +107,7 @@ export default function TournamentPage() {
         title: "Success",
         description: "Venue registered successfully.",
       });
-      venueForm.reset(); // Reset the form after successful submission.
+      venueForm.reset(); 
     } catch (error: any) {
       console.error("Failed to register venue:", error);
       toast({
@@ -115,7 +117,6 @@ export default function TournamentPage() {
       });
     }
   };
-
 
   const ongoing = tournaments.filter(t => t.status === 'in_progress');
   const upcoming = tournaments.filter(t => t.status === 'upcoming');
@@ -129,13 +130,139 @@ export default function TournamentPage() {
     );
   }
 
-  // Get the current selected discipline
   const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
 
-  // Update discipline type when discipline changes
   React.useEffect(() => {
     form.setValue("disciplineType", disciplineTypes[selectedDiscipline][0]);
   }, [selectedDiscipline, form]);
+
+  // Add query for registered players
+  const { data: registeredPlayers = [] } = useQuery({
+    queryKey: ["/api/tournaments", tournament?.id, "registrations"],
+    enabled: !!tournament?.id && (user?.role === 'admin' || user?.role === 'referee'),
+  });
+
+  // Add query for all players (for organizer's manual registration)
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: user?.role === 'admin' || user?.role === 'referee',
+  });
+
+  // Add mutation for manual player registration
+  const registerPlayerMutation = useMutation({
+    mutationFn: async ({ tournamentId, userId }: { tournamentId: number; userId: number }) => {
+      await apiRequest("POST", `/api/tournaments/${tournamentId}/register-player`, { userId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      toast({
+        title: "Success",
+        description: "Player registered successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to register player",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Add self-registration mutation
+  const selfRegisterMutation = useMutation({
+    mutationFn: async (tournamentId: number) => {
+      await apiRequest("POST", `/api/tournaments/${tournamentId}/register`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      toast({
+        title: "Success",
+        description: "Successfully registered for tournament.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to register for tournament",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Inside the tournament card render function, update the registration buttons
+  const renderRegistrationButtons = (tournament: Tournament) => {
+    if (user?.role === 'admin' || user?.role === 'referee') {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Manage Registrations</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Tournament Registrations</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Register New Player</h3>
+                <Select onValueChange={(userId) => {
+                  registerPlayerMutation.mutate({ 
+                    tournamentId: tournament.id, 
+                    userId: parseInt(userId)
+                  });
+                }}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select a player" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allPlayers.map((player) => (
+                      <SelectItem key={player.id} value={player.id.toString()}>
+                        {player.fullName || player.username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Registered Players</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Registration Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {registeredPlayers.map((registration) => (
+                      <TableRow key={registration.id}>
+                        <TableCell>{registration.user?.fullName || registration.user?.username}</TableCell>
+                        <TableCell className="capitalize">{registration.status}</TableCell>
+                        <TableCell>{new Date(registration.registeredAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    } else if (user?.role === 'player') {
+      return (
+        <Button 
+          onClick={() => selfRegisterMutation.mutate(tournament.id)}
+          disabled={
+            tournament.currentParticipants >= tournament.participants ||
+            new Date(tournament.registrationDeadline) < new Date()
+          }
+        >
+          Register Now
+        </Button>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -647,11 +774,7 @@ export default function TournamentPage() {
                             Start Tournament
                           </Button>
                         )}
-                        {user?.role === 'player' && (
-                          <Button onClick={() => {}} disabled={tournament.currentParticipants >= parseInt(tournament.participants)} variant={"default"}>
-                            Register Now
-                          </Button>
-                        )}
+                        {renderRegistrationButtons(tournament)}
                       </div>
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -743,11 +866,7 @@ export default function TournamentPage() {
                             Start Tournament
                           </Button>
                         )}
-                        {user?.role === 'player' && (
-                          <Button onClick={() => {}} disabled={tournament.currentParticipants >= parseInt(tournament.participants)} variant={"default"}>
-                            Register Now
-                          </Button>
-                        )}
+                        {renderRegistrationButtons(tournament)}
                       </div>
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -839,14 +958,10 @@ export default function TournamentPage() {
                             Start Tournament
                           </Button>
                         )}
-                        {user?.role === 'player' && (
-                          <Button onClick={() => {}} disabled={tournament.currentParticipants >= parseInt(tournament.participants)} variant={"default"}>
-                            Register Now
-                          </Button>
-                        )}
+                        {renderRegistrationButtons(tournament)}
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="textsm text-muted-foreground">
                       {tournament.description}
                     </div>
                   </CardHeader>

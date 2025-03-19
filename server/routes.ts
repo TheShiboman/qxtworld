@@ -353,7 +353,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add these routes after the existing tournament routes
+  // Add this route after the existing tournament registration routes
+  app.post('/api/tournaments/:id/register-player', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!['admin', 'referee'].includes(req.user!.role)) {
+      return res.status(403).json({ message: "Not authorized to register players" });
+    }
+
+    const tournamentId = parseInt(req.params.id);
+    const { userId } = req.body;
+
+    try {
+      // Check if tournament exists and is open for registration
+      const tournament = await storage.getTournament(tournamentId);
+
+      if (!tournament) {
+        return res.status(404).json({ message: "Tournament not found" });
+      }
+
+      // Check if tournament is still open for registration
+      if (new Date(tournament.registrationDeadline) < new Date()) {
+        return res.status(400).json({ message: "Registration deadline has passed" });
+      }
+
+      // Check if tournament is full
+      if (tournament.currentParticipants >= tournament.participants) {
+        return res.status(400).json({ message: "Tournament is full" });
+      }
+
+      // Check if player exists
+      const player = await storage.getUser(userId);
+      if (!player) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+
+      // Check if player is already registered
+      const existingRegistrations = await storage.getTournamentRegistrations(tournamentId);
+      const alreadyRegistered = existingRegistrations.some(reg => reg.userId === userId);
+
+      if (alreadyRegistered) {
+        return res.status(400).json({ message: "Player is already registered for this tournament" });
+      }
+
+      const registration = await storage.createTournamentRegistration({
+        tournamentId,
+        userId,
+        status: 'confirmed' // Auto-confirm when registered by organizer
+      });
+
+      res.json(registration);
+    } catch (error) {
+      console.error("Failed to register player:", error);
+      res.status(500).json({ message: "Failed to register player" });
+    }
+  });
 
   // Venue routes
   app.get('/api/venues', async (req, res) => {
