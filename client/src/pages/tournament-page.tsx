@@ -10,13 +10,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Tournament, insertTournamentSchema, disciplineTypes, tournamentFormats } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from "lucide-react";
+import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
-import { insertVenueSchema } from "@shared/schema";
 import { cueSportsDisciplines, matchTypes } from "@shared/schema";
 import React from 'react';
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function TournamentPage() {
@@ -45,7 +43,6 @@ export default function TournamentPage() {
       prize: "1000",
       participationFee: "0",
       description: "",
-      status: "upcoming",
       organizerDetails: {
         contactEmail: "",
         contactPhone: "",
@@ -86,44 +83,6 @@ export default function TournamentPage() {
     }
   };
 
-  const venueForm = useForm({
-    resolver: zodResolver(insertVenueSchema),
-    defaultValues: {
-      name: "",
-      address: "",
-      country: "",
-      city: "",
-      tableCounts: {
-        snooker: 0,
-        pool: 0
-      },
-      contactDetails: {
-        email: "",
-        phone: "",
-        website: ""
-      }
-    }
-  });
-
-  const onVenueSubmit = async (data: any) => {
-    try {
-      await apiRequest("POST", "/api/venues", data);
-      queryClient.invalidateQueries({ queryKey: ["/api/venues"] });
-      toast({
-        title: "Success",
-        description: "Venue registered successfully.",
-      });
-      venueForm.reset(); 
-    } catch (error: any) {
-      console.error("Failed to register venue:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to register venue. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   const ongoing = tournaments.filter(t => t.status === 'in_progress');
   const upcoming = tournaments.filter(t => t.status === 'upcoming');
   const past = tournaments.filter(t => t.status === 'completed');
@@ -144,8 +103,8 @@ export default function TournamentPage() {
 
   // Add query for registered players
   const { data: registeredPlayers = [] } = useQuery({
-    queryKey: ["/api/tournaments", tournament?.id, "registrations"],
-    enabled: !!tournament?.id && (user?.role === 'admin' || user?.role === 'referee'),
+    queryKey: ["/api/tournaments", "registrations"],
+    enabled: user?.role === 'admin' || user?.role === 'referee',
   });
 
   // Add query for all players (for organizer's manual registration)
@@ -221,7 +180,7 @@ export default function TournamentPage() {
                     <SelectValue placeholder="Select a player" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allPlayers.map((player) => (
+                    {allPlayers.map((player: any) => (
                       <SelectItem key={player.id} value={player.id.toString()}>
                         {player.fullName || player.username}
                       </SelectItem>
@@ -240,7 +199,7 @@ export default function TournamentPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {registeredPlayers.map((registration) => (
+                    {registeredPlayers.map((registration: any) => (
                       <TableRow key={registration.id}>
                         <TableCell>{registration.user?.fullName || registration.user?.username}</TableCell>
                         <TableCell className="capitalize">{registration.status}</TableCell>
@@ -285,7 +244,6 @@ export default function TournamentPage() {
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Basic Details */}
                   <FormField
                     control={form.control}
                     name="name"
@@ -335,7 +293,7 @@ export default function TournamentPage() {
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {disciplineTypes[form.watch('discipline') as keyof typeof disciplineTypes].map((type) => (
+                              {disciplineTypes[selectedDiscipline].map((type) => (
                                 <SelectItem key={type} value={type}>
                                   {type}
                                 </SelectItem>
@@ -394,7 +352,6 @@ export default function TournamentPage() {
                     />
                   </div>
 
-                  {/* Dates */}
                   <div className="grid grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
@@ -439,7 +396,6 @@ export default function TournamentPage() {
                     />
                   </div>
 
-                  {/* Tournament Details */}
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -466,7 +422,7 @@ export default function TournamentPage() {
                               <SelectValue placeholder="Select a venue" />
                             </SelectTrigger>
                             <SelectContent>
-                              {venues.map((venue) => (
+                              {venues.map((venue: any) => (
                                 <SelectItem key={venue.id} value={venue.id.toString()}>
                                   {venue.name}
                                 </SelectItem>
@@ -479,7 +435,6 @@ export default function TournamentPage() {
                     />
                   </div>
 
-                  {/* Prize Details */}
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -522,6 +477,46 @@ export default function TournamentPage() {
                             className="w-full p-2 border rounded-md bg-background min-h-[100px]"
                             placeholder="Enter tournament description"
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="organizerDetails.contactEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="organizerDetails.contactPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Phone</FormLabel>
+                        <FormControl>
+                          <Input type="tel" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="organizerDetails.website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Website</FormLabel>
+                        <FormControl>
+                          <Input type="url" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -754,32 +749,10 @@ export default function TournamentPage() {
                         <CardTitle>{tournament.name}</CardTitle>
                       </div>
                       <div className="flex gap-2">
-                        {user?.role === 'admin' && tournament.status === 'upcoming' && (
-                          <Button
-                            onClick={async () => {
-                              try {
-                                await apiRequest("POST", `/api/tournaments/${tournament.id}/start`);
-                                queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
-                                toast({
-                                  title: "Tournament Started",
-                                  description: "The tournament has been started and matches have been generated.",
-                                });
-                              } catch (error: any) {
-                                toast({
-                                  title: "Error",
-                                  description: error.message || "Failed to start tournament",
-                                  variant: "destructive"
-                                });
-                              }
-                            }}
-                          >
-                            Start Tournament
-                          </Button>
-                        )}
                         {renderRegistrationButtons(tournament)}
                       </div>
                     </div>
-                    <div className="textsm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground">
                       {tournament.description}
                     </div>
                   </CardHeader>
@@ -835,22 +808,9 @@ export default function TournamentPage() {
         </TabsContent>
 
         <TabsContent value="analysis">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI-Powered Match Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Advanced match analysis and insights coming soon. This feature will provide:
-              </p>
-              <ul className="list-disc list-inside mt-4 space-y-2 text-muted-foreground">
-                <li>Player performance metrics</li>
-                <li>Strategic game analysis</li>
-                <li>Historical match statistics</li>
-                <li>Predictive insights</li>
-              </ul>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <p className="text-center text-muted-foreground">Match analysis feature coming soon.</p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
