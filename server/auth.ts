@@ -23,7 +23,6 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   try {
-    console.log("Comparing passwords...");
     const [hashed, salt] = stored.split(".");
     if (!hashed || !salt) {
       console.error("Invalid stored password format");
