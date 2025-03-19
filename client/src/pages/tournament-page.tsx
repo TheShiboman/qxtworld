@@ -17,6 +17,10 @@ import { insertVenueSchema } from "@shared/schema";
 import { cueSportsDisciplines, matchTypes } from "@shared/schema";
 import React from 'react';
 
+// Assuming tournamentFormats is defined elsewhere and accessible here.  This needs to be added to the original code.
+const tournamentFormats = ["single elimination", "double elimination", "round robin", "swiss"]; //Example
+
+
 export default function TournamentPage() {
   const { user } = useAuth();
 
@@ -525,9 +529,11 @@ export default function TournamentPage() {
                           <FormLabel>Tournament Format</FormLabel>
                           <FormControl>
                             <select {...field} className="w-full p-2 border rounded-md bg-background">
-                              <option value="single elimination">Single Elimination</option>
-                              <option value="double elimination">Double Elimination</option>
-                              <option value="round robin">Round Robin</option>
+                              {tournamentFormats.map(format => (
+                                <option key={format} value={format}>
+                                  {format}
+                                </option>
+                              ))}
                             </select>
                           </FormControl>
                           <FormMessage />

@@ -79,7 +79,19 @@ export const matchTypes = [
 
 export type MatchType = typeof matchTypes[number];
 
-// Update tournaments table with disciplineType
+// Add tournament format configuration
+export const tournamentFormats = [
+  'Round Robin',
+  'Single Elimination',
+  'Double Elimination',
+  'Multi-Stage',
+  'Swiss System',
+  'Custom Format'
+] as const;
+
+export type TournamentFormat = typeof tournamentFormats[number];
+
+// Update tournaments table with format enum
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -92,7 +104,7 @@ export const tournaments = pgTable("tournaments", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull().default("upcoming"),
-  format: text("format").notNull(),
+  format: text("format", { enum: tournamentFormats }).notNull(),
   participants: integer("participants").notNull(),
   registrationDeadline: timestamp("registration_deadline").notNull(),
   currentParticipants: integer("current_participants").default(0),
@@ -200,7 +212,8 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
     position: z.string(),
     amount: z.number()
   })).optional(),
-  rules: z.array(z.string()).optional()
+  rules: z.array(z.string()).optional(),
+  format: z.enum(tournamentFormats)
 });
 
 export const insertMatchSchema = createInsertSchema(matches);
