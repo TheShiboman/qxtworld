@@ -8,20 +8,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Tournament, cueSportsDisciplines, matchTypes, tournamentFormats, disciplineTypes } from "@shared/schema";
-import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart } from "lucide-react";
+import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
+import { VenueDialog } from "@/components/venue-dialog";
 import React from 'react';
 
 export default function TournamentPage() {
   const { user } = useAuth();
   const [tournamentDialogOpen, setTournamentDialogOpen] = React.useState(false);
+  const [venueDialogOpen, setVenueDialogOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
     queryKey: ["/api/tournaments"],
   });
 
-  const { data: venues = [] } = useQuery({
+  const { data: venues = [], refetch: refetchVenues } = useQuery({
     queryKey: ["/api/venues"],
   });
 
@@ -40,13 +43,17 @@ export default function TournamentPage() {
       participationFee: "20",
       description: "",
       venueId: "",
+      organizerDetails: {
+        contactEmail: user?.email || "",
+        contactPhone: "",
+        website: ""
+      }
     }
   });
 
   const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
 
   React.useEffect(() => {
-    // Update discipline type when discipline changes
     if (disciplineTypes[selectedDiscipline]) {
       form.setValue("disciplineType", disciplineTypes[selectedDiscipline][0]);
     }
@@ -54,14 +61,38 @@ export default function TournamentPage() {
 
   const onSubmit = async (values: any) => {
     try {
+      setIsSubmitting(true);
       const formattedData = {
         ...values,
         organizerId: user!.id,
+        participants: parseInt(values.participants, 10),
+        prize: parseInt(values.prize, 10),
+        participationFee: parseInt(values.participationFee, 10),
+        venueId: values.venueId ? parseInt(values.venueId, 10) : undefined,
+        startDate: new Date(values.startDate).toISOString(),
+        endDate: new Date(values.endDate).toISOString(),
+        registrationDeadline: new Date(values.registrationDeadline).toISOString(),
         status: "upcoming",
         currentParticipants: 0,
+        type: values.matchType,
+        organizerDetails: {
+          contactEmail: user?.email || "",
+          contactPhone: values.organizerDetails?.contactPhone || "",
+          website: values.organizerDetails?.website || ""
+        },
+        bracket: [], // Add missing required fields with default values
+        rules: [],
+        sponsorships: [],
+        prizeBreakdown: [],
+        roundStartTimes: []
       };
 
-      await apiRequest("POST", "/api/tournaments", formattedData);
+      const response = await apiRequest("POST", "/api/tournaments", formattedData);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create tournament');
+      }
+
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       toast({
         title: "Success",
@@ -70,11 +101,14 @@ export default function TournamentPage() {
       setTournamentDialogOpen(false);
       form.reset();
     } catch (error: any) {
+      console.error("Error creating tournament:", error);
       toast({
         title: "Error",
-        description: "Failed to create tournament",
+        description: error.message || "Failed to create tournament",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -91,144 +125,185 @@ export default function TournamentPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">Tournaments & Matches</h1>
         {(user?.role === "admin" || user?.role === "referee") && (
-          <Dialog open={tournamentDialogOpen} onOpenChange={setTournamentDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>Create Tournament</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Tournament</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <label>Tournament Name</label>
-                  <Input {...form.register("name")} />
-                </div>
+          <div className="flex gap-2">
+            <Dialog open={tournamentDialogOpen} onOpenChange={setTournamentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>Create Tournament</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Tournament</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div>
+                    <label>Tournament Name</label>
+                    <Input {...form.register("name")} />
+                  </div>
 
-                <div>
-                  <label>Venue</label>
-                  <Select onValueChange={(value) => form.setValue("venueId", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select venue" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {venues.map((venue: any) => (
-                        <SelectItem key={venue.id} value={venue.id.toString()}>
-                          {venue.name} - {venue.city}, {venue.country}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label>Venue</label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setVenueDialogOpen(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Register New Venue
+                      </Button>
+                    </div>
+                    <Select onValueChange={(value) => form.setValue("venueId", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select venue" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {venues.map((venue: any) => (
+                          <SelectItem key={venue.id} value={venue.id.toString()}>
+                            {venue.name} - {venue.city}, {venue.country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label>Discipline</label>
-                  <Select onValueChange={(value) => form.setValue("discipline", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select discipline" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cueSportsDisciplines.map((discipline) => (
-                        <SelectItem key={discipline} value={discipline}>
-                          {discipline}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <label>Discipline</label>
+                    <Select onValueChange={(value) => form.setValue("discipline", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select discipline" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cueSportsDisciplines.map((discipline) => (
+                          <SelectItem key={discipline} value={discipline}>
+                            {discipline}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label>Discipline Type</label>
-                  <Select onValueChange={(value) => form.setValue("disciplineType", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select discipline type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {disciplineTypes[selectedDiscipline]?.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <label>Discipline Type</label>
+                    <Select onValueChange={(value) => form.setValue("disciplineType", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select discipline type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {disciplineTypes[selectedDiscipline]?.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label>Match Type</label>
-                  <Select onValueChange={(value) => form.setValue("matchType", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select match type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {matchTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <label>Match Type</label>
+                    <Select onValueChange={(value) => form.setValue("matchType", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select match type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {matchTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label>Tournament Format</label>
-                  <Select onValueChange={(value) => form.setValue("format", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tournamentFormats.map((format) => (
-                        <SelectItem key={format} value={format}>
-                          {format}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div>
+                    <label>Tournament Format</label>
+                    <Select onValueChange={(value) => form.setValue("format", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tournamentFormats.map((format) => (
+                          <SelectItem key={format} value={format}>
+                            {format}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <label>Start Date</label>
-                  <Input type="date" {...form.register("startDate")} />
-                </div>
+                  <div>
+                    <label>Start Date</label>
+                    <Input type="date" {...form.register("startDate")} />
+                  </div>
 
-                <div>
-                  <label>End Date</label>
-                  <Input type="date" {...form.register("endDate")} />
-                </div>
+                  <div>
+                    <label>End Date</label>
+                    <Input type="date" {...form.register("endDate")} />
+                  </div>
 
-                <div>
-                  <label>Registration Deadline</label>
-                  <Input type="date" {...form.register("registrationDeadline")} />
-                </div>
+                  <div>
+                    <label>Registration Deadline</label>
+                    <Input type="date" {...form.register("registrationDeadline")} />
+                  </div>
 
-                <div>
-                  <label>Number of Participants</label>
-                  <Input type="number" {...form.register("participants")} />
-                </div>
+                  <div>
+                    <label>Number of Participants</label>
+                    <Input type="number" {...form.register("participants")} />
+                  </div>
 
-                <div>
-                  <label>Prize Pool ($)</label>
-                  <Input type="number" {...form.register("prize")} />
-                </div>
+                  <div>
+                    <label>Prize Pool ($)</label>
+                    <Input type="number" {...form.register("prize")} />
+                  </div>
 
-                <div>
-                  <label>Entry Fee ($)</label>
-                  <Input type="number" {...form.register("participationFee")} />
-                </div>
+                  <div>
+                    <label>Entry Fee ($)</label>
+                    <Input type="number" {...form.register("participationFee")} />
+                  </div>
 
-                <div>
-                  <label>Description</label>
-                  <textarea
-                    {...form.register("description")}
-                    className="w-full p-2 border rounded-md bg-background min-h-[100px]"
-                  />
-                </div>
+                  <div>
+                    <label>Description</label>
+                    <textarea
+                      {...form.register("description")}
+                      className="w-full p-2 border rounded-md bg-background min-h-[100px]"
+                    />
+                  </div>
 
-                <Button type="submit" className="w-full">
-                  Create Tournament
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Organizer Contact Details</h3>
+                    <div>
+                      <label>Contact Phone</label>
+                      <Input {...form.register("organizerDetails.contactPhone")} />
+                    </div>
+                    <div>
+                      <label>Website (Optional)</label>
+                      <Input {...form.register("organizerDetails.website")} />
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Tournament'
+                    )}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <VenueDialog
+              open={venueDialogOpen}
+              onOpenChange={setVenueDialogOpen}
+              onSuccess={refetchVenues}
+            />
+          </div>
         )}
       </div>
 
@@ -295,6 +370,9 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
             <Trophy className="h-5 w-5 text-primary" />
             <CardTitle>{tournament.name}</CardTitle>
           </div>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {tournament.description}
         </div>
       </CardHeader>
       <CardContent>

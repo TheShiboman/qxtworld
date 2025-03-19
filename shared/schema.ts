@@ -2,7 +2,7 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Keep the existing type definitions
+// Keep existing type definitions
 export const cueSportsDisciplines = [
   'Snooker',
   'American Pool',
@@ -187,8 +187,40 @@ export const insertUserSchema = createInsertSchema(users)
     path: ["passwordConfirm"],
   });
 
-// Basic tournament schema without complex validation
-export const insertTournamentSchema = createInsertSchema(tournaments);
+// Basic tournament schema with minimal validation
+export const insertTournamentSchema = createInsertSchema(tournaments)
+  .omit({
+    id: true,
+    currentParticipants: true,
+    status: true,
+    currentRound: true,
+    totalRounds: true,
+    roundStartTimes: true,
+    bracket: true,
+    rules: true,
+    sponsorships: true,
+    prizeBreakdown: true
+  })
+  .extend({
+    name: z.string().min(1, "Tournament name is required"),
+    discipline: z.string(),
+    disciplineType: z.string(),
+    matchType: z.string(),
+    format: z.string(),
+    startDate: z.string(),
+    endDate: z.string(),
+    registrationDeadline: z.string(),
+    participants: z.string(),
+    prize: z.string(),
+    participationFee: z.string(),
+    description: z.string(),
+    venueId: z.string().optional(),
+    organizerDetails: z.object({
+      contactEmail: z.string().optional(),
+      contactPhone: z.string().optional(),
+      website: z.string().optional()
+    }).default({})
+  });
 
 export const insertMatchSchema = createInsertSchema(matches);
 export const insertProductSchema = createInsertSchema(products);
