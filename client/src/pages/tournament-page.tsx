@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Tournament } from "@shared/schema";
+import { Tournament, cueSportsDisciplines, matchTypes, tournamentFormats, disciplineTypes } from "@shared/schema";
 import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -20,19 +21,36 @@ export default function TournamentPage() {
     queryKey: ["/api/tournaments"],
   });
 
+  const { data: venues = [] } = useQuery({
+    queryKey: ["/api/venues"],
+  });
+
   const form = useForm({
     defaultValues: {
       name: "",
       discipline: "Snooker",
-      type: "Single",
+      disciplineType: "Full Reds",
+      matchType: "Single",
+      format: "Single Elimination",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       participants: "32",
       prize: "1000",
       participationFee: "20",
+      description: "",
+      venueId: "",
     }
   });
+
+  const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
+
+  React.useEffect(() => {
+    // Update discipline type when discipline changes
+    if (disciplineTypes[selectedDiscipline]) {
+      form.setValue("disciplineType", disciplineTypes[selectedDiscipline][0]);
+    }
+  }, [selectedDiscipline, form]);
 
   const onSubmit = async (values: any) => {
     try {
@@ -88,6 +106,86 @@ export default function TournamentPage() {
                 </div>
 
                 <div>
+                  <label>Venue</label>
+                  <Select onValueChange={(value) => form.setValue("venueId", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select venue" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {venues.map((venue: any) => (
+                        <SelectItem key={venue.id} value={venue.id.toString()}>
+                          {venue.name} - {venue.city}, {venue.country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label>Discipline</label>
+                  <Select onValueChange={(value) => form.setValue("discipline", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select discipline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cueSportsDisciplines.map((discipline) => (
+                        <SelectItem key={discipline} value={discipline}>
+                          {discipline}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label>Discipline Type</label>
+                  <Select onValueChange={(value) => form.setValue("disciplineType", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select discipline type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {disciplineTypes[selectedDiscipline]?.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label>Match Type</label>
+                  <Select onValueChange={(value) => form.setValue("matchType", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select match type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {matchTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label>Tournament Format</label>
+                  <Select onValueChange={(value) => form.setValue("format", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tournamentFormats.map((format) => (
+                        <SelectItem key={format} value={format}>
+                          {format}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <label>Start Date</label>
                   <Input type="date" {...form.register("startDate")} />
                 </div>
@@ -115,6 +213,14 @@ export default function TournamentPage() {
                 <div>
                   <label>Entry Fee ($)</label>
                   <Input type="number" {...form.register("participationFee")} />
+                </div>
+
+                <div>
+                  <label>Description</label>
+                  <textarea
+                    {...form.register("description")}
+                    className="w-full p-2 border rounded-md bg-background min-h-[100px]"
+                  />
                 </div>
 
                 <Button type="submit" className="w-full">
@@ -209,6 +315,10 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
             </div>
           </div>
           <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium">Format</p>
+              <p className="text-sm text-muted-foreground">{tournament.format}</p>
+            </div>
             <div>
               <p className="text-sm font-medium">Prize Pool</p>
               <p className="text-lg font-bold">${tournament.prize.toLocaleString()}</p>
