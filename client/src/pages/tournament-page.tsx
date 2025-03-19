@@ -104,7 +104,16 @@ export default function TournamentPage() {
 
   const onVenueSubmit = async (data: any) => {
     try {
-      await apiRequest("POST", "/api/venues", data);
+      // Transform the table counts to numbers
+      const formattedData = {
+        ...data,
+        tableCounts: {
+          snooker: parseInt(data.tableCounts.snooker) || 0,
+          pool: parseInt(data.tableCounts.pool) || 0
+        }
+      };
+
+      await apiRequest("POST", "/api/venues", formattedData);
       refetchVenues();
       toast({
         title: "Success",
@@ -963,7 +972,7 @@ export default function TournamentPage() {
                           <span className="text-sm">
                             {new Date(tournament.startDate).toLocaleDateString()} -
                             {new Date(tournament.endDate).toLocaleDateString()}
-                          </span>
+                                                    </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-muted-foreground" />
