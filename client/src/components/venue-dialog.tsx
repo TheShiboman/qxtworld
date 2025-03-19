@@ -44,7 +44,16 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
 
   const onSubmit = async (data: any) => {
     try {
-      await apiRequest("POST", "/api/venues", data);
+      // Convert table counts to strings if they're numbers
+      const formattedData = {
+        ...data,
+        tableCounts: {
+          snooker: String(data.tableCounts.snooker),
+          pool: String(data.tableCounts.pool)
+        }
+      };
+
+      await apiRequest("POST", "/api/venues", formattedData);
       toast({
         title: "Success",
         description: "Venue registered successfully.",
@@ -140,7 +149,7 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
                     <FormItem>
                       <FormLabel>Snooker Tables</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} min="0" />
+                        <Input type="number" {...field} min="0" onChange={e => field.onChange(e.target.value)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -153,7 +162,7 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
                     <FormItem>
                       <FormLabel>Pool Tables</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} min="0" />
+                        <Input type="number" {...field} min="0" onChange={e => field.onChange(e.target.value)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
