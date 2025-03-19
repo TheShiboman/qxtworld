@@ -193,34 +193,27 @@ export const insertUserSchema = createInsertSchema(users)
   });
 
 // Update tournament schema validation
-export const insertTournamentSchema = createInsertSchema(tournaments).extend({
-  name: z.string().min(1, "Tournament name is required"),
-  discipline: z.enum(cueSportsDisciplines, {
-    required_error: "Please select a discipline"
-  }),
-  disciplineType: z.string({
-    required_error: "Please select a discipline type"
-  }),
-  matchType: z.enum(matchTypes, {
-    required_error: "Please select a match type"
-  }),
-  startDate: z.string().transform((str) => new Date(str)),
-  endDate: z.string().transform((str) => new Date(str)),
-  registrationDeadline: z.string().transform((str) => new Date(str)),
-  format: z.enum(tournamentFormats, {
-    required_error: "Please select a tournament format"
-  }),
-  participants: z.string().transform((str) => parseInt(str, 10)),
-  prize: z.string().transform((str) => parseInt(str, 10)),
-  participationFee: z.string().transform((str) => parseInt(str, 10)),
-  description: z.string().optional(),
-  venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
-  organizerDetails: z.object({
-    contactEmail: z.string().email("Invalid email address"),
-    contactPhone: z.string().optional(),
-    website: z.string().optional()
-  }).optional()
-});
+export const insertTournamentSchema = createInsertSchema(tournaments)
+  .extend({
+    name: z.string().min(1, "Tournament name is required"),
+    discipline: z.enum(cueSportsDisciplines),
+    disciplineType: z.string(),
+    matchType: z.enum(matchTypes),
+    startDate: z.string().transform((str) => new Date(str)),
+    endDate: z.string().transform((str) => new Date(str)),
+    registrationDeadline: z.string().transform((str) => new Date(str)),
+    format: z.enum(tournamentFormats),
+    participants: z.string().transform((str) => parseInt(str, 10)),
+    prize: z.string().transform((str) => parseInt(str, 10)),
+    participationFee: z.string().transform((str) => parseInt(str, 10)),
+    description: z.string().optional(),
+    venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
+    organizerDetails: z.object({
+      contactEmail: z.string().optional(),
+      contactPhone: z.string().optional(),
+      website: z.string().optional()
+    }).optional().default({})
+  });
 
 export const insertMatchSchema = createInsertSchema(matches);
 export const insertProductSchema = createInsertSchema(products);
