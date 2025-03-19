@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Tournament, insertTournamentSchema, disciplineTypes } from "@shared/schema";
+import { Tournament, insertTournamentSchema, disciplineTypes, tournamentFormats } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -16,10 +16,6 @@ import { useForm } from "react-hook-form";
 import { insertVenueSchema } from "@shared/schema";
 import { cueSportsDisciplines, matchTypes } from "@shared/schema";
 import React from 'react';
-
-// Assuming tournamentFormats is defined elsewhere and accessible here.  This needs to be added to the original code.
-const tournamentFormats = ["single elimination", "double elimination", "round robin", "swiss"]; //Example
-
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -43,7 +39,7 @@ export default function TournamentPage() {
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      format: "single elimination",
+      format: "Single Elimination", // Updated default format
       participants: "8",
       prize: "1000",
       participationFee: "0",
