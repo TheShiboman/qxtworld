@@ -106,24 +106,35 @@ export default function TournamentPage() {
 
   const onSubmit = async (data: any) => {
     try {
-      await apiRequest("POST", "/api/tournaments", {
+      // Format all the dates in the ISO format expected by the backend
+      const formattedData = {
         ...data,
         organizerId: user!.id,
         participants: parseInt(data.participants),
         prize: parseInt(data.prize),
-        participationFee: parseInt(data.participationFee)
-      });
+        participationFee: parseInt(data.participationFee),
+        venueId: data.venueId ? parseInt(data.venueId) : undefined,
+        type: data.matchType,
+        startDate: new Date(data.startDate).toISOString(),
+        endDate: new Date(data.endDate).toISOString(),
+        registrationDeadline: new Date(data.registrationDeadline).toISOString()
+      };
+
+      console.log('Submitting tournament data:', formattedData);
+      await apiRequest("POST", "/api/tournaments", formattedData);
+
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       toast({
         title: "Success",
         description: "Tournament created successfully.",
       });
       setTournamentDialogOpen(false);
+      form.reset();
     } catch (error: any) {
       console.error("Failed to create tournament:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create tournament. Please try again.",
+        description: error.message || "Failed to create tournament. Please fill all required fields.",
         variant: "destructive"
       });
     }
