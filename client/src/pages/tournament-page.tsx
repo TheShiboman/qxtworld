@@ -92,12 +92,13 @@ export default function TournamentPage() {
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       format: "Single Elimination",
-      participants: "8",
+      participants: "32",
       prize: "1000",
-      participationFee: "0",
+      participationFee: "20",
       description: "",
+      venueId: undefined,
       organizerDetails: {
-        contactEmail: "",
+        contactEmail: user?.email || "",
         contactPhone: "",
         website: ""
       }
@@ -106,22 +107,38 @@ export default function TournamentPage() {
 
   const onSubmit = async (data: any) => {
     try {
-      // Format all the dates in the ISO format expected by the backend
       const formattedData = {
-        ...data,
+        name: data.name,
+        discipline: data.discipline,
+        disciplineType: data.disciplineType,
+        matchType: data.matchType,
         organizerId: user!.id,
-        participants: parseInt(data.participants),
-        prize: parseInt(data.prize),
-        participationFee: parseInt(data.participationFee),
         venueId: data.venueId ? parseInt(data.venueId) : undefined,
-        type: data.matchType,
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
-        registrationDeadline: new Date(data.registrationDeadline).toISOString()
+        status: "upcoming",
+        format: data.format,
+        participants: parseInt(data.participants),
+        registrationDeadline: new Date(data.registrationDeadline).toISOString(),
+        currentParticipants: 0,
+        prize: parseInt(data.prize),
+        participationFee: parseInt(data.participationFee),
+        description: data.description || "",
+        type: data.matchType,
+        organizerDetails: {
+          contactEmail: data.organizerDetails.contactEmail,
+          contactPhone: data.organizerDetails.contactPhone || "",
+          website: data.organizerDetails.website || ""
+        }
       };
 
-      console.log('Submitting tournament data:', formattedData);
-      await apiRequest("POST", "/api/tournaments", formattedData);
+      console.log('Attempting to create tournament with data:', formattedData);
+
+      const response = await apiRequest("POST", "/api/tournaments", formattedData);
+
+      if (!response.ok) {
+        throw new Error('Failed to create tournament. Please check all required fields.');
+      }
 
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       toast({
@@ -134,7 +151,7 @@ export default function TournamentPage() {
       console.error("Failed to create tournament:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create tournament. Please fill all required fields.",
+        description: error.message || "Failed to create tournament. Please ensure all required fields are filled correctly.",
         variant: "destructive"
       });
     }
