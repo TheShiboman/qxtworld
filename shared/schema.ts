@@ -207,17 +207,21 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   startDate: z.string().transform((str) => new Date(str)),
   endDate: z.string().transform((str) => new Date(str)),
   registrationDeadline: z.string().transform((str) => new Date(str)),
+  format: z.enum(tournamentFormats, {
+    required_error: "Please select a tournament format"
+  }),
+  participants: z.string().transform((str) => parseInt(str, 10)),
   prize: z.string().transform((str) => parseInt(str, 10)),
   participationFee: z.string().transform((str) => parseInt(str, 10)),
-  participants: z.string().transform((str) => parseInt(str, 10)),
+  description: z.string().min(1, "Description is required"),
   venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address"),
     contactPhone: z.string().min(1, "Contact phone is required"),
-    website: z.string().url("Invalid website URL").optional()
-  }),
-  description: z.string().min(1, "Description is required"),
-  format: z.enum(tournamentFormats)
+    website: z.string().url("Invalid website URL").optional().or(z.literal(''))
+  }, {
+    required_error: "Organizer details are required"
+  })
 });
 
 export const insertMatchSchema = createInsertSchema(matches);

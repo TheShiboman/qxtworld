@@ -107,10 +107,6 @@ export default function TournamentPage() {
 
   const onSubmit = async (values: any) => {
     try {
-      console.log('Form state:', form.formState);
-      console.log('Form errors:', form.formState.errors);
-      console.log('Submitting values:', values);
-
       const formattedData = {
         name: values.name,
         discipline: values.discipline,
