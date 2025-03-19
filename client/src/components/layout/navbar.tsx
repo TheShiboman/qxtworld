@@ -7,7 +7,19 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { Trophy, Monitor, ShoppingBag, LogOut, User } from "lucide-react";
+import { 
+  Trophy, 
+  Monitor, 
+  ShoppingBag, 
+  LogOut, 
+  User,
+  Home,
+  Award,
+  Users,
+  GraduationCap,
+  BarChart,
+  Dumbbell
+} from "lucide-react";
 
 export default function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -23,7 +35,16 @@ export default function Navbar() {
           </Link>
 
           <NavigationMenu>
-            <NavigationMenuList className="flex gap-6">
+            <NavigationMenuList className="flex gap-4">
+              <NavigationMenuItem>
+                <Link href="/dashboard">
+                  <NavigationMenuLink className="flex items-center gap-2">
+                    <Home className="h-4 w-4" />
+                    Dashboard
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
               <NavigationMenuItem>
                 <Link href="/tournaments">
                   <NavigationMenuLink className="flex items-center gap-2">
@@ -33,22 +54,56 @@ export default function Navbar() {
                 </Link>
               </NavigationMenuItem>
 
-              {user.role === 'referee' && (
-                <NavigationMenuItem>
-                  <Link href="/live-scoring">
-                    <NavigationMenuLink className="flex items-center gap-2">
-                      <Monitor className="h-4 w-4" />
-                      Live Scoring
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-              )}
+              <NavigationMenuItem>
+                <Link href="/training">
+                  <NavigationMenuLink className="flex items-center gap-2">
+                    <Dumbbell className="h-4 w-4" />
+                    Training
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <Link href="/shop">
+                <Link href="/leaderboards">
+                  <NavigationMenuLink className="flex items-center gap-2">
+                    <BarChart className="h-4 w-4" />
+                    Leaderboards
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/community">
+                  <NavigationMenuLink className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Community
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/academy">
+                  <NavigationMenuLink className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Academy
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/store">
                   <NavigationMenuLink className="flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4" />
-                    Shop
+                    Store
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/live-streaming">
+                  <NavigationMenuLink className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    Live
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
