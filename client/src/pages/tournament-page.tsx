@@ -117,22 +117,14 @@ export default function TournamentPage() {
       }
 
       const formattedData = {
-        name: values.name,
-        discipline: values.discipline,
-        disciplineType: values.disciplineType,
-        matchType: values.matchType,
+        ...values,
         organizerId: user!.id,
         venueId: values.venueId ? parseInt(values.venueId) : undefined,
         startDate: new Date(values.startDate).toISOString(),
         endDate: new Date(values.endDate).toISOString(),
-        status: "upcoming",
-        format: values.format,
-        participants: parseInt(values.participants),
         registrationDeadline: new Date(values.registrationDeadline).toISOString(),
+        status: "upcoming",
         currentParticipants: 0,
-        prize: parseInt(values.prize),
-        participationFee: parseInt(values.participationFee),
-        description: values.description || "",
         type: values.matchType,
         organizerDetails: {
           contactEmail: values.organizerDetails.contactEmail || user?.email || "",

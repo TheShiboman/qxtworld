@@ -218,7 +218,7 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address").min(1, "Contact email is required"),
     contactPhone: z.string().min(1, "Contact phone is required"),
-    website: z.string().url("Invalid website URL").optional().or(z.literal(''))
+    website: z.string().url("Invalid website URL").optional().or(z.literal('')).or(z.null())
   }, {
     required_error: "Please fill in all required organizer contact details"
   }).refine((data) => {
