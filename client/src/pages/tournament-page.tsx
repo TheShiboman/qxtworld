@@ -975,7 +975,7 @@ export default function TournamentPage() {
                           <p className="text-lg font-bold">
                             Prize Pool: ${tournament.prize.toLocaleString()}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="sm text-muted-foreground">
                             Entry Fee: ${tournament.participationFee.toLocaleString()}
                           </p>
                         </div>
