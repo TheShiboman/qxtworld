@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Tournament, insertTournamentSchema, disciplineTypes, tournamentFormats } from "@shared/schema";
+import { Tournament, insertTournamentSchema, disciplineTypes, tournamentFormats, insertVenueSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart } from "lucide-react";
+import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { cueSportsDisciplines, matchTypes } from "@shared/schema";
@@ -24,7 +24,7 @@ export default function TournamentPage() {
     queryKey: ["/api/tournaments"],
   });
 
-  const { data: venues = [] } = useQuery({
+  const { data: venues = [], refetch: refetchVenues } = useQuery({
     queryKey: ["/api/venues"],
   });
 
@@ -46,6 +46,25 @@ export default function TournamentPage() {
       organizerDetails: {
         contactEmail: "",
         contactPhone: "",
+        website: ""
+      }
+    }
+  });
+
+  const venueForm = useForm({
+    resolver: zodResolver(insertVenueSchema),
+    defaultValues: {
+      name: "",
+      address: "",
+      country: "",
+      city: "",
+      tableCounts: {
+        snooker: 0,
+        pool: 0
+      },
+      contactDetails: {
+        email: "",
+        phone: "",
         website: ""
       }
     }
@@ -78,6 +97,33 @@ export default function TournamentPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create tournament. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const onVenueSubmit = async (data: any) => {
+    try {
+      await apiRequest("POST", "/api/venues", data);
+      refetchVenues();
+      toast({
+        title: "Success",
+        description: "Venue registered successfully.",
+      });
+      venueForm.reset();
+      // Close the dialog after successful submission
+      const dialogElement = document.querySelector('[role="dialog"]');
+      if (dialogElement) {
+        const closeButton = dialogElement.querySelector('button[aria-label="Close"]');
+        if (closeButton) {
+          (closeButton as HTMLButtonElement).click();
+        }
+      }
+    } catch (error: any) {
+      console.error("Failed to register venue:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to register venue. Please try again.",
         variant: "destructive"
       });
     }
@@ -171,8 +217,8 @@ export default function TournamentPage() {
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Register New Player</h3>
                 <Select onValueChange={(userId) => {
-                  registerPlayerMutation.mutate({ 
-                    tournamentId: tournament.id, 
+                  registerPlayerMutation.mutate({
+                    tournamentId: tournament.id,
                     userId: parseInt(userId)
                   });
                 }}>
@@ -215,7 +261,7 @@ export default function TournamentPage() {
       );
     } else if (user?.role === 'player') {
       return (
-        <Button 
+        <Button
           onClick={() => selfRegisterMutation.mutate(tournament.id)}
           disabled={
             tournament.currentParticipants >= tournament.participants ||
@@ -304,7 +350,10 @@ export default function TournamentPage() {
                         </FormItem>
                       )}
                     />
+                  </div>
 
+
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="matchType"
@@ -396,6 +445,179 @@ export default function TournamentPage() {
                     />
                   </div>
 
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium">Venue Details</h3>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Register New Venue
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Register New Venue</DialogTitle>
+                          </DialogHeader>
+                          <Form {...venueForm}>
+                            <form onSubmit={venueForm.handleSubmit(onVenueSubmit)} className="space-y-6">
+                              <FormField
+                                control={venueForm.control}
+                                name="name"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Venue Name</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={venueForm.control}
+                                  name="country"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Country</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={venueForm.control}
+                                  name="city"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>City</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <FormField
+                                control={venueForm.control}
+                                name="address"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Address</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="space-y-4">
+                                <h4 className="text-sm font-medium">Table Count</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <FormField
+                                    control={venueForm.control}
+                                    name="tableCounts.snooker"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Snooker Tables</FormLabel>
+                                        <FormControl>
+                                          <Input type="number" {...field} min="0" />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={venueForm.control}
+                                    name="tableCounts.pool"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Pool Tables</FormLabel>
+                                        <FormControl>
+                                          <Input type="number" {...field} min="0" />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-4">
+                                <h4 className="text-sm font-medium">Contact Details</h4>
+                                <FormField
+                                  control={venueForm.control}
+                                  name="contactDetails.email"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Email</FormLabel>
+                                      <FormControl>
+                                        <Input type="email" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={venueForm.control}
+                                  name="contactDetails.phone"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Phone</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={venueForm.control}
+                                  name="contactDetails.website"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Website</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} placeholder="https://" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <Button type="submit" className="w-full">Register Venue</Button>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="venueId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Select Venue</FormLabel>
+                          <Select onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a venue" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {venues.map((venue: any) => (
+                                <SelectItem key={venue.id} value={venue.id.toString()}>
+                                  {venue.name} - {venue.city}, {venue.country}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -413,31 +635,6 @@ export default function TournamentPage() {
 
                     <FormField
                       control={form.control}
-                      name="venueId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Select Venue</FormLabel>
-                          <Select onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a venue" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {venues.map((venue: any) => (
-                                <SelectItem key={venue.id} value={venue.id.toString()}>
-                                  {venue.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
                       name="prize"
                       render={({ field }) => (
                         <FormItem>
@@ -449,7 +646,9 @@ export default function TournamentPage() {
                         </FormItem>
                       )}
                     />
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="participationFee"
