@@ -203,6 +203,7 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   discipline: z.enum(cueSportsDisciplines),
   disciplineType: z.string(),
   matchType: z.enum(matchTypes),
+  venueId: z.string().transform((str) => parseInt(str, 10)).optional(),
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address"),
     contactPhone: z.string().optional(),
