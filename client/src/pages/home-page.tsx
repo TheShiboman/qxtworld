@@ -1,12 +1,16 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Trophy, Monitor, Users, ShoppingBag } from "lucide-react";
+import { Trophy, Users, ShoppingBag, BookOpen, Video, Award } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useState } from "react";
 
 export default function HomePage() {
   const { user } = useAuth();
-  
+  const [discipline, setDiscipline] = useState("snooker");
+
   const { data: tournaments } = useQuery({
     queryKey: ["/api/tournaments"],
   });
@@ -17,90 +21,123 @@ export default function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Discipline Selection */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Welcome to QXT World</h1>
-        <p className="text-muted-foreground">
-          Your digital portal for cue sports management and competition
-        </p>
+        <Select value={discipline} onValueChange={setDiscipline}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Select Discipline" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="snooker">Snooker</SelectItem>
+            <SelectItem value="pool">American Pool</SelectItem>
+            <SelectItem value="chinese_pool">Chinese Pool</SelectItem>
+            <SelectItem value="carom">Carom</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Main Feature Tiles */}
+      <div className="grid md:grid-cols-3 gap-6 mb-12">
         <Link href="/tournaments">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardHeader>
-              <Trophy className="h-8 w-8 text-primary mb-2" />
+              <Trophy className="h-12 w-12 text-primary mb-4" />
               <CardTitle>Tournaments</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{tournaments?.length || 0}</p>
-              <p className="text-muted-foreground">Active tournaments</p>
+              <p className="text-muted-foreground">View or create tournaments</p>
             </CardContent>
           </Card>
         </Link>
 
-        {user.role === 'referee' && (
-          <Link href="/live-scoring">
-            <Card className="hover:bg-accent cursor-pointer transition-colors">
-              <CardHeader>
-                <Monitor className="h-8 w-8 text-primary mb-2" />
-                <CardTitle>Live Scoring</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Manage match scores</p>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
-
-        <Link href="/players">
+        <Link href="/leaderboards">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardHeader>
-              <Users className="h-8 w-8 text-primary mb-2" />
-              <CardTitle>Players</CardTitle>
+              <Users className="h-12 w-12 text-primary mb-4" />
+              <CardTitle>Players & Rankings</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">View rankings and stats</p>
+              <p className="text-muted-foreground">View player stats and leaderboards</p>
             </CardContent>
           </Card>
         </Link>
 
-        <Link href="/shop">
+        <Link href="/store">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardHeader>
-              <ShoppingBag className="h-8 w-8 text-primary mb-2" />
+              <ShoppingBag className="h-12 w-12 text-primary mb-4" />
               <CardTitle>Equipment Shop</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{products?.length || 0}</p>
-              <p className="text-muted-foreground">Available products</p>
+              <p className="text-muted-foreground">Browse professional equipment</p>
             </CardContent>
           </Card>
         </Link>
       </div>
 
-      {tournaments && tournaments.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-4">Upcoming Tournaments</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tournaments.slice(0, 3).map((tournament: any) => (
-              <Card key={tournament.id}>
+      {/* Upcoming Tournaments - Scrollable */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold mb-4">Upcoming Tournaments</h2>
+        <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+          <div className="flex w-max space-x-4 p-4">
+            {tournaments?.slice(0, 5).map((tournament: any) => (
+              <Card key={tournament.id} className="w-[300px]">
                 <CardHeader>
-                  <CardTitle>{tournament.name}</CardTitle>
+                  <CardTitle className="text-lg">{tournament.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-2">{tournament.type}</p>
-                  <p className="text-sm">
+                  <p className="text-sm text-muted-foreground mb-2">
                     Starts: {new Date(tournament.startDate).toLocaleDateString()}
                   </p>
-                  <p className="text-sm">
+                  <p className="text-sm font-medium">
                     Prize Pool: ${tournament.prize.toLocaleString()}
                   </p>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </div>
-      )}
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <Link href="/training">
+          <Card className="hover:bg-accent cursor-pointer transition-colors">
+            <CardContent className="flex items-center gap-2 p-4">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <span>Training</span>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/live-streaming">
+          <Card className="hover:bg-accent cursor-pointer transition-colors">
+            <CardContent className="flex items-center gap-2 p-4">
+              <Video className="h-5 w-5 text-primary" />
+              <span>Live Matches</span>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/community">
+          <Card className="hover:bg-accent cursor-pointer transition-colors">
+            <CardContent className="flex items-center gap-2 p-4">
+              <Users className="h-5 w-5 text-primary" />
+              <span>Community</span>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/academy">
+          <Card className="hover:bg-accent cursor-pointer transition-colors">
+            <CardContent className="flex items-center gap-2 p-4">
+              <Award className="h-5 w-5 text-primary" />
+              <span>QXT Academy</span>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
     </div>
   );
 }
