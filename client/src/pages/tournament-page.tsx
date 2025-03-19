@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Tournament, insertTournamentSchema } from "@shared/schema";
+import { Tournament, insertTournamentSchema, disciplineTypes } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { insertVenueSchema } from "@shared/schema";
 import { cueSportsDisciplines, matchTypes } from "@shared/schema";
+import React from 'react';
 
 export default function TournamentPage() {
   const { user } = useAuth();
@@ -33,6 +34,7 @@ export default function TournamentPage() {
       name: "",
       type: "snooker",
       discipline: "Snooker", // Default discipline
+      disciplineType: "Full Reds", // Default discipline type
       matchType: "Single", // Default match type
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -127,6 +129,14 @@ export default function TournamentPage() {
     );
   }
 
+  // Get the current selected discipline
+  const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
+
+  // Update discipline type when discipline changes
+  React.useEffect(() => {
+    form.setValue("disciplineType", disciplineTypes[selectedDiscipline][0]);
+  }, [selectedDiscipline, form]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -165,6 +175,25 @@ export default function TournamentPage() {
                               {cueSportsDisciplines.map((discipline) => (
                                 <option key={discipline} value={discipline}>
                                   {discipline}
+                                </option>
+                              ))}
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="disciplineType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Discipline Type</FormLabel>
+                          <FormControl>
+                            <select {...field} className="w-full p-2 border rounded-md bg-background">
+                              {disciplineTypes[selectedDiscipline].map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
                                 </option>
                               ))}
                             </select>

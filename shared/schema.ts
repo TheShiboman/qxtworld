@@ -15,6 +15,19 @@ export const cueSportsDisciplines = [
 
 export type CueSportsDiscipline = typeof cueSportsDisciplines[number];
 
+// Add discipline types configuration
+export const disciplineTypes = {
+  Snooker: ['Full Reds', 'Six Reds'],
+  'American Pool': ['8 Ball', '9 Ball', '10 Ball', 'Straight Pool'],
+  'Chinese Pool': ['Standard', 'Pro Format'],
+  'Carom': ['3-Cushion', '1-Cushion', 'Artistic Billiards'],
+  'Billiards': ['English Billiards'],
+  'Black Ball': ['Standard'],
+  'Russian Pyramid': ['Free Pyramid', 'Dynamic Pyramid']
+} as const;
+
+export type DisciplineType = typeof disciplineTypes[keyof typeof disciplineTypes][number];
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -42,7 +55,7 @@ export const matches = pgTable("matches", {
   endTime: timestamp("end_time"),
   winner: integer("winner"),
   matchNumber: integer("match_number").notNull(),
-  nextMatchNumber: integer("next_match_number"), 
+  nextMatchNumber: integer("next_match_number"),
   isWinnersBracket: boolean("is_winners_bracket").default(true),
   // Match management fields
   frameCount: integer("frame_count").default(5),
@@ -66,11 +79,13 @@ export const matchTypes = [
 
 export type MatchType = typeof matchTypes[number];
 
+// Update tournaments table with disciplineType
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
   discipline: text("discipline", { enum: cueSportsDisciplines }).notNull(),
+  disciplineType: text("discipline_type").notNull(),
   matchType: text("matchType", { enum: matchTypes }).notNull().default('Single'),
   organizerId: integer("organizer_id").notNull(), // Reference to users table
   venueId: integer("venue_id"), // Reference to venues table
@@ -86,7 +101,7 @@ export const tournaments = pgTable("tournaments", {
   description: text("description").notNull(),
   currentRound: integer("current_round").default(1),
   totalRounds: integer("total_rounds"),
-  roundStartTimes: jsonb("round_start_times").default([]), 
+  roundStartTimes: jsonb("round_start_times").default([]),
   bracket: jsonb("bracket").notNull().default([]),
   rules: jsonb("rules").default([]),
   sponsorships: jsonb("sponsorships").default([]),
@@ -122,7 +137,7 @@ export const tournamentRegistrations = pgTable("tournament_registrations", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id").notNull(),
   userId: integer("user_id").notNull(),
-  status: text("status").notNull().default("pending"), 
+  status: text("status").notNull().default("pending"),
   registeredAt: timestamp("registered_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -165,7 +180,7 @@ export const insertUserSchema = createInsertSchema(users)
     path: ["passwordConfirm"],
   });
 
-// Update the tournament schema validation
+// Update tournament schema validation
 export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   registrationDeadline: z.string().transform((str) => new Date(str)),
   startDate: z.string().transform((str) => new Date(str)),
@@ -174,6 +189,7 @@ export const insertTournamentSchema = createInsertSchema(tournaments).extend({
   participationFee: z.string().transform((str) => parseInt(str, 10)),
   participants: z.string().transform((str) => parseInt(str, 10)),
   discipline: z.enum(cueSportsDisciplines),
+  disciplineType: z.string(),
   matchType: z.enum(matchTypes),
   organizerDetails: z.object({
     contactEmail: z.string().email("Invalid email address"),
