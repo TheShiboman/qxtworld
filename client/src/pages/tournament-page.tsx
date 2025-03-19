@@ -108,14 +108,6 @@ export default function TournamentPage() {
 
   const onSubmit = async (values: any) => {
     try {
-      if (!values.organizerDetails || !values.organizerDetails.contactPhone) {
-        form.setError("organizerDetails.contactPhone", {
-          type: "required",
-          message: "Contact phone is required"
-        });
-        return;
-      }
-
       const formattedData = {
         ...values,
         organizerId: user!.id,
@@ -496,12 +488,12 @@ export default function TournamentPage() {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>Description<span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <textarea
                               {...field}
                               className="w-full p-2 border rounded-md bg-background min-h-[100px]"
-                              placeholder="Enter tournament description"
+                              placeholder="Enter tournament description (required)"
                             />
                           </FormControl>
                           <FormMessage />
@@ -511,38 +503,31 @@ export default function TournamentPage() {
 
                     <FormField
                       control={form.control}
-                      name="organizerDetails.contactEmail"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
                       name="organizerDetails.contactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Phone</FormLabel>
+                          <FormLabel>Contact Phone<span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input type="tel" {...field} />
+                            <Input type="tel" {...field} placeholder="Enter contact phone (required)" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
                     <FormField
                       control={form.control}
                       name="organizerDetails.website"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Website</FormLabel>
+                          <FormLabel>Website (Optional)</FormLabel>
                           <FormControl>
-                            <Input type="url" {...field} />
+                            <Input 
+                              type="url" 
+                              {...field} 
+                              placeholder="Enter website URL (optional)"
+                              value={field.value || ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
