@@ -47,7 +47,7 @@ export default function AuthPage() {
           <div className="space-y-6">
             <div className="flex flex-col items-center mb-8">
               <img 
-                src="/attached_assets/QXT World Round Logo.png" 
+                src="attached_assets/QXT World Round Logo.png" 
                 alt="QXT World Logo" 
                 className="w-32 h-32 mb-6"
               />
