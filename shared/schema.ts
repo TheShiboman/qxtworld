@@ -48,21 +48,9 @@ export const tournamentFormats = [
 export type TournamentFormat = typeof tournamentFormats[number];
 
 // Database schema
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role").notNull().default("player"),
-  fullName: text("full_name").notNull(),
-  email: text("email").notNull().unique(),
-  rating: integer("rating").default(1500),
-  createdAt: timestamp("created_at").defaultNow()
-});
-
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type").notNull(),
   discipline: text("discipline", { enum: cueSportsDisciplines }).notNull(),
   disciplineType: text("discipline_type").notNull(),
   matchType: text("matchType", { enum: matchTypes }).notNull().default('Single'),
@@ -92,44 +80,25 @@ export const tournaments = pgTable("tournaments", {
   prizeBreakdown: jsonb("prize_breakdown").default([])
 });
 
-export const matches = pgTable("matches", {
-  id: serial("id").primaryKey(),
-  tournamentId: integer("tournament_id").notNull(),
-  player1Id: integer("player1_id").notNull(),
-  player2Id: integer("player2_id").notNull(),
-  score1: integer("score1").default(0),
-  score2: integer("score2").default(0),
-  status: text("status").notNull().default('scheduled'),
-  round: integer("round").notNull(),
-  startTime: timestamp("start_time"),
-  endTime: timestamp("end_time"),
-  winner: integer("winner"),
-  matchNumber: integer("match_number").notNull(),
-  nextMatchNumber: integer("next_match_number"),
-  isWinnersBracket: boolean("is_winners_bracket").default(true),
-  frameCount: integer("frame_count").default(5),
-  refereeId: integer("referee_id"),
-  canDraw: boolean("can_draw").default(false),
-  tableNumber: integer("table_number"),
-  lastEditedBy: integer("last_edited_by"),
-  lastEditedAt: timestamp("last_edited_at"),
-  notes: text("notes"),
-  isLocked: boolean("is_locked").default(false)
-});
-
-// Schema definitions for form validation
+// Simplified form validation schema
 export const insertTournamentSchema = z.object({
   name: z.string().min(1, "Tournament name is required"),
-  discipline: z.enum(cueSportsDisciplines),
-  disciplineType: z.string().min(1, "Discipline type is required"),
-  matchType: z.enum(matchTypes),
-  format: z.enum(tournamentFormats),
+  discipline: z.enum(cueSportsDisciplines, {
+    errorMap: () => ({ message: "Please select a discipline" })
+  }),
+  disciplineType: z.string().min(1, "Please select a discipline type"),
+  matchType: z.enum(matchTypes, {
+    errorMap: () => ({ message: "Please select a match type" })
+  }),
+  format: z.enum(tournamentFormats, {
+    errorMap: () => ({ message: "Please select a tournament format" })
+  }),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   registrationDeadline: z.string().min(1, "Registration deadline is required"),
   participants: z.string().min(1, "Number of participants is required"),
   prize: z.string().min(1, "Prize amount is required"),
-  participationFee: z.string().min(1, "Participation fee is required"),
+  participationFee: z.string().min(1, "Entry fee is required"),
   description: z.string().min(1, "Description is required"),
   venueId: z.string().optional(),
   organizerDetails: z.object({
@@ -138,42 +107,6 @@ export const insertTournamentSchema = z.object({
   })
 });
 
-export const insertUserSchema = z.object({
-    username: z.string().min(1, "Username is required"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    fullName: z.string().min(1, "Full name is required"),
-    email: z.string().email("Invalid email address"),
-    role: z.string().optional().default("player")
-}).refine((data) => data.password.length >= 8, {message: "Password must be at least 8 characters", path:["password"]});
-
-
-export const insertMatchSchema = z.object({
-  tournamentId: z.number().int().min(1, "Tournament ID is required"),
-  player1Id: z.number().int().min(1, "Player 1 ID is required"),
-  player2Id: z.number().int().min(1, "Player 2 ID is required"),
-  score1: z.number().int().default(0),
-  score2: z.number().int().default(0),
-  status: z.enum(['scheduled', 'in_progress', 'completed']).default('scheduled'),
-  round: z.number().int().min(1, "Round number is required"),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  winner: z.number().int().optional(),
-  matchNumber: z.number().int().min(1, "Match number is required"),
-  nextMatchNumber: z.number().int().optional(),
-  isWinnersBracket: z.boolean().default(true),
-  frameCount: z.number().int().default(5),
-  refereeId: z.number().int().optional(),
-  canDraw: z.boolean().default(false),
-  tableNumber: z.number().int().optional(),
-  lastEditedBy: z.number().int().optional(),
-  lastEditedAt: z.string().optional(),
-  notes: z.string().optional(),
-  isLocked: z.boolean().default(false)
-});
-
 // Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
-export type Match = typeof matches.$inferSelect;
-export type InsertMatch = z.infer<typeof insertMatchSchema>;

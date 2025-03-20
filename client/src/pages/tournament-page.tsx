@@ -68,20 +68,23 @@ export default function TournamentPage() {
         ...values,
         organizerId: user!.id,
         type: values.matchType,
+        // Basic data transformations
         startDate: new Date(values.startDate).toISOString(),
         endDate: new Date(values.endDate).toISOString(),
         registrationDeadline: new Date(values.registrationDeadline).toISOString(),
-        participants: parseInt(values.participants, 10),
-        prize: parseInt(values.prize, 10),
-        participationFee: parseInt(values.participationFee, 10),
-        venueId: values.venueId ? parseInt(values.venueId, 10) : undefined,
+        participants: Number(values.participants),
+        prize: Number(values.prize),
+        participationFee: Number(values.participationFee),
+        venueId: values.venueId ? Number(values.venueId) : undefined,
+        // Default values
         status: "upcoming",
         currentParticipants: 0,
         currentRound: 1,
+        // Required details
         organizerDetails: {
           contactEmail: user?.email || "",
-          contactPhone: values.organizerDetails?.contactPhone || "",
-          website: values.organizerDetails?.website || ""
+          contactPhone: values.organizerDetails.contactPhone,
+          website: values.organizerDetails.website || ""
         },
         bracket: [],
         rules: [],
