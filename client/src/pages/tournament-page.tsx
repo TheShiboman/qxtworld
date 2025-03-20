@@ -392,7 +392,14 @@ export default function TournamentPage() {
                           <FormItem>
                             <FormLabel className="text-[#C4A44E]">Start Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
+                              <div className="relative">
+                                <Input 
+                                  type="date" 
+                                  {...field} 
+                                  className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200 pl-10 [&::-webkit-calendar-picker-indicator]:bg-[#C4A44E] [&::-webkit-calendar-picker-indicator]:hover:bg-[#D4C28A] [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:shadow-[0_0_5px_rgba(196,164,78,0.3)] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                                />
+                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#C4A44E] pointer-events-none" />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -406,7 +413,14 @@ export default function TournamentPage() {
                           <FormItem>
                             <FormLabel className="text-[#C4A44E]">End Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
+                              <div className="relative">
+                                <Input 
+                                  type="date" 
+                                  {...field} 
+                                  className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200 pl-10 [&::-webkit-calendar-picker-indicator]:bg-[#C4A44E] [&::-webkit-calendar-picker-indicator]:hover:bg-[#D4C28A] [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:shadow-[0_0_5px_rgba(196,164,78,0.3)] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                                />
+                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#C4A44E] pointer-events-none" />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -420,7 +434,14 @@ export default function TournamentPage() {
                           <FormItem>
                             <FormLabel className="text-[#C4A44E]">Registration Deadline</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
+                              <div className="relative">
+                                <Input 
+                                  type="date" 
+                                  {...field} 
+                                  className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200 pl-10 [&::-webkit-calendar-picker-indicator]:bg-[#C4A44E] [&::-webkit-calendar-picker-indicator]:hover:bg-[#D4C28A] [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:shadow-[0_0_5px_rgba(196,164,78,0.3)] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                                />
+                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#C4A44E] pointer-events-none" />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
