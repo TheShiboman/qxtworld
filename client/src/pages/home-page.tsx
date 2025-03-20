@@ -21,15 +21,17 @@ export default function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Logo and Navigation */}
-      <div className="flex justify-center mb-8">
+      {/* Header with Logo */}
+      <div className="flex items-center mb-8">
         <Link href="/">
           <img 
             src="/qxt-logo.png" 
             alt="QXT World Logo" 
-            className="w-48 h-48 cursor-pointer hover:opacity-90 transition-opacity"
+            className="w-24 h-24 cursor-pointer hover:opacity-90 transition-opacity mr-4"
           />
         </Link>
+
+        {/* Rest of the header content */}
       </div>
 
       {/* Discipline Selection */}
