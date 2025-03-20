@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Logo } from "@/components/ui/logo";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -31,9 +30,14 @@ export default function Navbar() {
     <nav className="border-b border-[#c4a45b] bg-[#062128] shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-24 items-center">
-          <div className="absolute top-2 left-6">
-            <Logo />
-          </div>
+          {/* QXT World Round Logo */}
+          <Link href="/">
+            <img 
+              src="/qxt-logo.png" 
+              alt="QXT World Round Logo" 
+              className="w-16 h-16 cursor-pointer hover:opacity-90 transition-opacity rounded-full"
+            />
+          </Link>
 
           <NavigationMenu>
             <NavigationMenuList className="flex gap-4">

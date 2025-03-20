@@ -21,17 +21,6 @@ export default function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header with Logo */}
-      <div className="flex items-center mb-8">
-        <Link href="/">
-          <img 
-            src="/qxt-logo.png" 
-            alt="QXT World Round Logo" 
-            className="w-24 h-24 cursor-pointer hover:opacity-90 transition-opacity mr-4"
-          />
-        </Link>
-      </div>
-
       {/* Discipline Selection */}
       <div className="mb-8">
         <Select value={discipline} onValueChange={setDiscipline}>
