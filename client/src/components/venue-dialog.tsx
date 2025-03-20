@@ -44,7 +44,6 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
 
   const onSubmit = async (data: any) => {
     try {
-      // Convert table counts to strings if they're numbers
       const formattedData = {
         ...data,
         tableCounts: {
@@ -74,14 +73,14 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Plus className="h-4 w-4 mr-2" />
+        <Button className="bg-[#C4A44E] hover:bg-[#D4C28A] text-white shadow-lg transition-all duration-200">
+          <Plus className="h-4 w-4 mr-2 text-white" />
           Register New Venue
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[600px] bg-[#041D21] border border-[#C4A44E] shadow-[0_0_15px_rgba(196,164,78,0.1)]">
         <DialogHeader>
-          <DialogTitle>Register New Venue</DialogTitle>
+          <DialogTitle className="text-[#C4A44E]">Register New Venue</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -90,9 +89,12 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Venue Name</FormLabel>
+                  <FormLabel className="text-[#C4A44E]">Venue Name</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input 
+                      {...field} 
+                      className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -104,9 +106,12 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
                 name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Country</FormLabel>
+                    <FormLabel className="text-[#C4A44E]">Country</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input 
+                        {...field} 
+                        className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -117,9 +122,12 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>City</FormLabel>
+                    <FormLabel className="text-[#C4A44E]">City</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input 
+                        {...field} 
+                        className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -131,25 +139,34 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel className="text-[#C4A44E]">Address</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input 
+                      {...field} 
+                      className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <div className="space-y-4">
-              <h4 className="text-sm font-medium">Table Count</h4>
+              <h4 className="text-sm font-medium text-[#C4A44E]">Table Count</h4>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="tableCounts.snooker"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Snooker Tables</FormLabel>
+                      <FormLabel className="text-[#C4A44E]">Snooker Tables</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} min="0" onChange={e => field.onChange(e.target.value)} />
+                        <Input 
+                          type="number" 
+                          {...field} 
+                          min="0" 
+                          onChange={e => field.onChange(e.target.value)}
+                          className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -160,9 +177,15 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
                   name="tableCounts.pool"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pool Tables</FormLabel>
+                      <FormLabel className="text-[#C4A44E]">Pool Tables</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} min="0" onChange={e => field.onChange(e.target.value)} />
+                        <Input 
+                          type="number" 
+                          {...field} 
+                          min="0" 
+                          onChange={e => field.onChange(e.target.value)}
+                          className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -171,15 +194,19 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
               </div>
             </div>
             <div className="space-y-4">
-              <h4 className="text-sm font-medium">Contact Details</h4>
+              <h4 className="text-sm font-medium text-[#C4A44E]">Contact Details</h4>
               <FormField
                 control={form.control}
                 name="contactDetails.email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-[#C4A44E]">Email</FormLabel>
                     <FormControl>
-                      <Input type="email" {...field} />
+                      <Input 
+                        type="email" 
+                        {...field}
+                        className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -190,9 +217,12 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
                 name="contactDetails.phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel className="text-[#C4A44E]">Phone</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input 
+                        {...field}
+                        className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -203,16 +233,25 @@ export function VenueDialog({ open, onOpenChange, onSuccess }: VenueDialogProps)
                 name="contactDetails.website"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Website</FormLabel>
+                    <FormLabel className="text-[#C4A44E]">Website</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="https://" />
+                      <Input 
+                        {...field} 
+                        placeholder="https://"
+                        className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <Button type="submit" className="w-full">Register Venue</Button>
+            <Button 
+              type="submit" 
+              className="w-full bg-[#C4A44E] hover:bg-[#D4C28A] text-white shadow-md transition-all duration-200"
+            >
+              Register Venue
+            </Button>
           </form>
         </Form>
       </DialogContent>
