@@ -22,7 +22,8 @@ export default {
           foreground: "#ffffff",
         },
         primary: {
-          DEFAULT: "#041c20", // Dark Cyan-Teal
+          DEFAULT: "#c4a45b", // Primary Gold
+          hover: "#e6c680", // Highlight Gold
           foreground: "#ffffff",
         },
         secondary: {
@@ -41,9 +42,13 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        border: "#051d21", // Accent Teal
+        border: "#c4a45b", // Gold border
         input: "#051d21",
-        ring: "#041c20",
+        ring: "#c4a45b", // Gold ring
+        gold: {
+          DEFAULT: "#c4a45b",
+          light: "#e6c680",
+        },
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -58,8 +63,8 @@ export default {
           "primary-foreground": "#ffffff",
           accent: "#051e23",
           "accent-foreground": "#ffffff",
-          border: "#051d21",
-          ring: "#041c20",
+          border: "#c4a45b", // Gold border
+          ring: "#c4a45b", // Gold ring
         },
       },
       keyframes: {
@@ -76,6 +81,9 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      boxShadow: {
+        'gold': '0 0 10px rgba(196, 164, 91, 0.2)',
+      }
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],

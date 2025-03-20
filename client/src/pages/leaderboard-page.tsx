@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 export default function LeaderboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">Leaderboards & Rankings</h1>
+      <h1 className="text-4xl font-bold mb-8 text-[#c4a45b]">Leaderboards & Rankings</h1>
 
       <div className="space-y-8">
         {/* Main Rankings */}
@@ -15,7 +15,7 @@ export default function LeaderboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-primary" />
+                <Globe className="h-5 w-5 text-[#c4a45b]" />
                 Global Rankings
               </CardTitle>
             </CardHeader>
@@ -29,7 +29,7 @@ export default function LeaderboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
+                <MapPin className="h-5 w-5 text-[#c4a45b]" />
                 Regional & Club Rankings
               </CardTitle>
             </CardHeader>
@@ -45,7 +45,7 @@ export default function LeaderboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
+              <Activity className="h-5 w-5 text-[#c4a45b]" />
               Performance Hub
             </CardTitle>
           </CardHeader>
@@ -60,17 +60,17 @@ export default function LeaderboardPage() {
               <TabsContent value="overview">
                 <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Win Rate</p>
+                    <p className="text-sm font-medium text-[#c4a45b]">Win Rate</p>
                     <p className="text-2xl font-bold">76%</p>
                     <p className="text-xs text-muted-foreground">Last 30 days</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Average Break</p>
+                    <p className="text-sm font-medium text-[#c4a45b]">Average Break</p>
                     <p className="text-2xl font-bold">45</p>
                     <p className="text-xs text-muted-foreground">Points</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Tournament Wins</p>
+                    <p className="text-sm font-medium text-[#c4a45b]">Tournament Wins</p>
                     <p className="text-2xl font-bold">3</p>
                     <p className="text-xs text-muted-foreground">This season</p>
                   </div>
@@ -81,14 +81,14 @@ export default function LeaderboardPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-accent rounded-lg">
                     <div>
-                      <p className="font-medium">QXT Spring Championship</p>
+                      <p className="font-medium text-[#c4a45b]">QXT Spring Championship</p>
                       <p className="text-sm text-muted-foreground">Quarter-finalist</p>
                     </div>
-                    <Trophy className="h-5 w-5 text-primary" />
+                    <Trophy className="h-5 w-5 text-[#c4a45b]" />
                   </div>
                   <div className="flex items-center justify-between p-4 bg-accent rounded-lg">
                     <div>
-                      <p className="font-medium">Club Masters Series</p>
+                      <p className="font-medium text-[#c4a45b]">Club Masters Series</p>
                       <p className="text-sm text-muted-foreground">Winner</p>
                     </div>
                     <Trophy className="h-5 w-5 text-yellow-500" />
@@ -101,15 +101,15 @@ export default function LeaderboardPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="p-4 bg-accent rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
-                        <Target className="h-4 w-4 text-primary" />
-                        <p className="font-medium">Pot Success Rate</p>
+                        <Target className="h-4 w-4 text-[#c4a45b]" />
+                        <p className="font-medium text-[#c4a45b]">Pot Success Rate</p>
                       </div>
                       <p className="text-2xl font-bold">82%</p>
                     </div>
                     <div className="p-4 bg-accent rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
-                        <BarChart className="h-4 w-4 text-primary" />
-                        <p className="font-medium">Safety Play Success</p>
+                        <BarChart className="h-4 w-4 text-[#c4a45b]" />
+                        <p className="font-medium text-[#c4a45b]">Safety Play Success</p>
                       </div>
                       <p className="text-2xl font-bold">71%</p>
                     </div>
@@ -125,13 +125,13 @@ export default function LeaderboardPage() {
 
         {/* Sponsorship Hub */}
         <div>
-          <h2 className="text-2xl font-semibold mb-4">Sponsorship Hub</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-[#c4a45b]">Sponsorship Hub</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Sponsored Players */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-primary" />
+                  <Star className="h-5 w-5 text-[#c4a45b]" />
                   Featured Sponsored Players
                 </CardTitle>
               </CardHeader>
@@ -140,13 +140,13 @@ export default function LeaderboardPage() {
                   <div className="p-4 bg-accent rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <p className="font-medium">James Wilson</p>
+                        <p className="font-medium text-[#c4a45b]">James Wilson</p>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">Rising Star</Badge>
-                          <Badge className="bg-primary/10">QXT Sponsored</Badge>
+                          <Badge className="bg-[#c4a45b]/10 text-[#c4a45b]">QXT Sponsored</Badge>
                         </div>
                       </div>
-                      <Link className="h-5 w-5 text-primary" />
+                      <Link className="h-5 w-5 text-[#c4a45b]" />
                     </div>
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       <img src="/sponsor-logo-1.svg" alt="Sponsor 1" className="h-8" />
@@ -158,13 +158,13 @@ export default function LeaderboardPage() {
                   <div className="p-4 bg-accent rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <p className="font-medium">Sarah Chen</p>
+                        <p className="font-medium text-[#c4a45b]">Sarah Chen</p>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">Pro Player</Badge>
                           <Badge className="bg-yellow-500/10 text-yellow-500">Elite Sponsor</Badge>
                         </div>
                       </div>
-                      <Link className="h-5 w-5 text-primary" />
+                      <Link className="h-5 w-5 text-[#c4a45b]" />
                     </div>
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       <img src="/sponsor-logo-4.svg" alt="Sponsor 4" className="h-8" />
@@ -180,7 +180,7 @@ export default function LeaderboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-primary" />
+                  <DollarSign className="h-5 w-5 text-[#c4a45b]" />
                   Sponsorship Marketplace
                 </CardTitle>
               </CardHeader>
@@ -189,13 +189,13 @@ export default function LeaderboardPage() {
                   <div className="p-4 bg-accent rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <p className="font-medium">For Sponsors</p>
+                        <p className="font-medium text-[#c4a45b]">For Sponsors</p>
                         <p className="text-sm text-muted-foreground">Connect with top talent</p>
                       </div>
-                      <Award className="h-5 w-5 text-primary" />
+                      <Award className="h-5 w-5 text-[#c4a45b]" />
                     </div>
                     <div className="space-y-2 mt-4">
-                      <p className="text-sm">Benefits:</p>
+                      <p className="text-sm text-[#c4a45b]">Benefits:</p>
                       <ul className="list-disc list-inside text-sm text-muted-foreground">
                         <li>Brand visibility on player profiles</li>
                         <li>Match highlight promotions</li>
@@ -209,13 +209,13 @@ export default function LeaderboardPage() {
                   <div className="p-4 bg-accent rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <p className="font-medium">For Players</p>
+                        <p className="font-medium text-[#c4a45b]">For Players</p>
                         <p className="text-sm text-muted-foreground">Get sponsored</p>
                       </div>
-                      <Users className="h-5 w-5 text-primary" />
+                      <Users className="h-5 w-5 text-[#c4a45b]" />
                     </div>
                     <div className="space-y-2 mt-4">
-                      <p className="text-sm">Requirements:</p>
+                      <p className="text-sm text-[#c4a45b]">Requirements:</p>
                       <ul className="list-disc list-inside text-sm text-muted-foreground">
                         <li>Minimum ranking requirements</li>
                         <li>Active tournament participation</li>

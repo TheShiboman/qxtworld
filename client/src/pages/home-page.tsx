@@ -24,7 +24,7 @@ export default function HomePage() {
       {/* Discipline Selection */}
       <div className="mb-8">
         <Select value={discipline} onValueChange={setDiscipline}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[200px] border-[#c4a45b] text-[#c4a45b]">
             <SelectValue placeholder="Select Discipline" />
           </SelectTrigger>
           <SelectContent>
@@ -41,7 +41,7 @@ export default function HomePage() {
         <Link href="/tournaments">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardHeader>
-              <Trophy className="h-12 w-12 text-primary mb-4" />
+              <Trophy className="h-12 w-12 text-[#c4a45b] mb-4" />
               <CardTitle>Tournaments</CardTitle>
             </CardHeader>
             <CardContent>
@@ -53,7 +53,7 @@ export default function HomePage() {
         <Link href="/leaderboards">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardHeader>
-              <Users className="h-12 w-12 text-primary mb-4" />
+              <Users className="h-12 w-12 text-[#c4a45b] mb-4" />
               <CardTitle>Players & Rankings</CardTitle>
             </CardHeader>
             <CardContent>
@@ -65,7 +65,7 @@ export default function HomePage() {
         <Link href="/store">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardHeader>
-              <ShoppingBag className="h-12 w-12 text-primary mb-4" />
+              <ShoppingBag className="h-12 w-12 text-[#c4a45b] mb-4" />
               <CardTitle>Equipment Shop</CardTitle>
             </CardHeader>
             <CardContent>
@@ -77,8 +77,8 @@ export default function HomePage() {
 
       {/* Upcoming Tournaments - Scrollable */}
       <div className="mb-12">
-        <h2 className="text-2xl font-bold mb-4">Upcoming Tournaments</h2>
-        <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+        <h2 className="text-2xl font-bold mb-4 text-[#c4a45b]">Upcoming Tournaments</h2>
+        <ScrollArea className="w-full whitespace-nowrap rounded-md border border-[#c4a45b] shadow-gold">
           <div className="flex w-max space-x-4 p-4">
             {tournaments?.slice(0, 5).map((tournament: any) => (
               <Card key={tournament.id} className="w-[300px]">
@@ -89,7 +89,7 @@ export default function HomePage() {
                   <p className="text-sm text-muted-foreground mb-2">
                     Starts: {new Date(tournament.startDate).toLocaleDateString()}
                   </p>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium text-[#c4a45b]">
                     Prize Pool: ${tournament.prize.toLocaleString()}
                   </p>
                 </CardContent>
@@ -105,7 +105,7 @@ export default function HomePage() {
         <Link href="/training">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardContent className="flex items-center gap-2 p-4">
-              <BookOpen className="h-5 w-5 text-primary" />
+              <BookOpen className="h-5 w-5 text-[#c4a45b]" />
               <span>Training</span>
             </CardContent>
           </Card>
@@ -114,7 +114,7 @@ export default function HomePage() {
         <Link href="/live-streaming">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardContent className="flex items-center gap-2 p-4">
-              <Video className="h-5 w-5 text-primary" />
+              <Video className="h-5 w-5 text-[#c4a45b]" />
               <span>Live Matches</span>
             </CardContent>
           </Card>
@@ -123,7 +123,7 @@ export default function HomePage() {
         <Link href="/community">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardContent className="flex items-center gap-2 p-4">
-              <Users className="h-5 w-5 text-primary" />
+              <Users className="h-5 w-5 text-[#c4a45b]" />
               <span>Community</span>
             </CardContent>
           </Card>
@@ -132,7 +132,7 @@ export default function HomePage() {
         <Link href="/academy">
           <Card className="hover:bg-accent cursor-pointer transition-colors">
             <CardContent className="flex items-center gap-2 p-4">
-              <Award className="h-5 w-5 text-primary" />
+              <Award className="h-5 w-5 text-[#c4a45b]" />
               <span>QXT Academy</span>
             </CardContent>
           </Card>

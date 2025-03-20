@@ -28,7 +28,7 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav className="border-b border-[#051d21] bg-[#062128] shadow-lg">
+    <nav className="border-b border-[#c4a45b] bg-[#062128] shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-24 items-center">
           <div className="absolute top-2 left-6">
@@ -39,8 +39,8 @@ export default function Navbar() {
             <NavigationMenuList className="flex gap-4">
               <NavigationMenuItem>
                 <Link href="/dashboard">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <Home className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <Home className="h-4 w-4 text-[#c4a45b]" />
                     Dashboard
                   </NavigationMenuLink>
                 </Link>
@@ -48,8 +48,8 @@ export default function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/tournaments">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <Trophy className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <Trophy className="h-4 w-4 text-[#c4a45b]" />
                     Tournaments
                   </NavigationMenuLink>
                 </Link>
@@ -57,8 +57,8 @@ export default function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/training">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <Dumbbell className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <Dumbbell className="h-4 w-4 text-[#c4a45b]" />
                     Training
                   </NavigationMenuLink>
                 </Link>
@@ -66,8 +66,8 @@ export default function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/leaderboards">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <BarChart className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <BarChart className="h-4 w-4 text-[#c4a45b]" />
                     Leaderboards
                   </NavigationMenuLink>
                 </Link>
@@ -75,8 +75,8 @@ export default function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/community">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <Users className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <Users className="h-4 w-4 text-[#c4a45b]" />
                     Community
                   </NavigationMenuLink>
                 </Link>
@@ -84,8 +84,8 @@ export default function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/academy">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <GraduationCap className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <GraduationCap className="h-4 w-4 text-[#c4a45b]" />
                     Academy
                   </NavigationMenuLink>
                 </Link>
@@ -93,8 +93,8 @@ export default function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/store">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <ShoppingBag className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <ShoppingBag className="h-4 w-4 text-[#c4a45b]" />
                     Store
                   </NavigationMenuLink>
                 </Link>
@@ -102,8 +102,8 @@ export default function Navbar() {
 
               <NavigationMenuItem>
                 <Link href="/live-streaming">
-                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-opacity-90 transition-colors">
-                    <Monitor className="h-4 w-4" />
+                  <NavigationMenuLink className="flex items-center gap-2 text-white hover:text-[#e6c680] transition-colors">
+                    <Monitor className="h-4 w-4 text-[#c4a45b]" />
                     Live
                   </NavigationMenuLink>
                 </Link>
@@ -116,9 +116,9 @@ export default function Navbar() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-2 text-white hover:bg-[#041c20] hover:text-opacity-90 transition-colors"
+                className="flex items-center gap-2 text-white hover:text-[#e6c680] hover:bg-[#041c20] transition-colors"
               >
-                <User className="h-4 w-4" />
+                <User className="h-4 w-4 text-[#c4a45b]" />
                 {user.fullName}
               </Button>
             </Link>
@@ -126,9 +126,9 @@ export default function Navbar() {
               variant="outline"
               size="sm"
               onClick={() => logoutMutation.mutate()}
-              className="flex items-center gap-2 border-[#051d21] text-white hover:bg-[#041c20] hover:border-opacity-90 transition-colors"
+              className="flex items-center gap-2 border-[#c4a45b] text-white hover:border-[#e6c680] hover:text-[#e6c680] hover:bg-[#041c20] transition-colors"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 text-[#c4a45b]" />
               Logout
             </Button>
           </div>
