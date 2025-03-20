@@ -8,11 +8,11 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { 
-  Trophy, 
-  Monitor, 
-  ShoppingBag, 
-  LogOut, 
+import {
+  Trophy,
+  Monitor,
+  ShoppingBag,
+  LogOut,
   User,
   Home,
   Award,
@@ -31,7 +31,7 @@ export default function Navbar() {
     <nav className="border-b">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16 items-center">
-          <div className="relative -top-4">
+          <div className="relative -top-3 left-6">
             <Logo />
           </div>
 
