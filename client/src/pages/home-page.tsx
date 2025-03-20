@@ -26,12 +26,10 @@ export default function HomePage() {
         <Link href="/">
           <img 
             src="/qxt-logo.png" 
-            alt="QXT World Logo" 
+            alt="QXT World Round Logo" 
             className="w-24 h-24 cursor-pointer hover:opacity-90 transition-opacity mr-4"
           />
         </Link>
-
-        {/* Rest of the header content */}
       </div>
 
       {/* Discipline Selection */}
