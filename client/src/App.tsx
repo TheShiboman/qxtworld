@@ -44,9 +44,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background text-foreground">
           <Navbar />
-          <main className="container mx-auto py-4">
+          <main className="container mx-auto py-4 px-4">
             <Router />
           </main>
           <Toaster />
