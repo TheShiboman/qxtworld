@@ -45,9 +45,15 @@ export default function AuthPage() {
       <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8">
         <div className="flex flex-col justify-center">
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-16 w-16 text-[#c4a45b]" />
-              <h1 className="text-5xl font-bold text-[#c4a45b]">QXT World</h1>
+            <div className="flex flex-col items-center mb-8">
+              <img 
+                src="/attached_assets/QXT World Round Logo.png" 
+                alt="QXT World Logo" 
+                className="w-32 h-32 mb-6"
+              />
+              <div className="flex items-center gap-2">
+                <h1 className="text-5xl font-bold text-[#c4a45b]">QXT World</h1>
+              </div>
             </div>
             <p className="text-xl text-muted-foreground">
               Welcome to the future of cue sports. Join our digital ecosystem for tournaments,
