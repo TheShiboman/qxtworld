@@ -49,7 +49,7 @@ export default function AuthPage() {
               <img 
                 src="/qxt-logo.png" 
                 alt="QXT World Logo" 
-                className="w-32 h-32 mb-6"
+                className="w-40 h-40 mb-6"
               />
               <div className="flex items-center gap-2">
                 <h1 className="text-5xl font-bold text-[#c4a45b]">QXT World</h1>
