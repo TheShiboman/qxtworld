@@ -252,16 +252,18 @@ export default function TournamentPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Tournaments & Matches</h1>
+        <h1 className="text-4xl font-bold text-[#C4A44E]">Tournaments & Matches</h1>
         {(user?.role === "admin" || user?.role === "referee") && (
           <div className="flex gap-2">
             <Dialog open={tournamentDialogOpen} onOpenChange={setTournamentDialogOpen}>
               <DialogTrigger asChild>
-                <Button>Create Tournament</Button>
+                <Button className="bg-[#C4A44E] hover:bg-[#D4C28A] text-white shadow-lg transition-all duration-200 border border-[#C4A44E]/20">
+                  Create Tournament
+                </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto bg-[#041D21] border border-[#C4A44E] shadow-[0_0_15px_rgba(196,164,78,0.1)]">
                 <DialogHeader>
-                  <DialogTitle>Create New Tournament</DialogTitle>
+                  <DialogTitle className="text-[#C4A44E]">Create New Tournament</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                   <form 
@@ -273,22 +275,25 @@ export default function TournamentPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tournament Name</FormLabel>
+                          <FormLabel className="text-[#C4A44E]">Tournament Name</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Enter tournament name" />
+                            <Input 
+                              {...field} 
+                              placeholder="Enter tournament name" 
+                              className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="discipline"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Discipline</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Discipline</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select discipline" />
@@ -311,7 +316,7 @@ export default function TournamentPage() {
                         name="disciplineType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Discipline Type</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Discipline Type</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select type" />
@@ -337,7 +342,7 @@ export default function TournamentPage() {
                         name="matchType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Match Type</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Match Type</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select match type" />
@@ -360,7 +365,7 @@ export default function TournamentPage() {
                         name="format"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Tournament Format</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Tournament Format</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select format" />
@@ -385,9 +390,9 @@ export default function TournamentPage() {
                         name="startDate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Start Date</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Start Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <Input type="date" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -399,9 +404,9 @@ export default function TournamentPage() {
                         name="endDate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>End Date</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">End Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <Input type="date" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -413,9 +418,9 @@ export default function TournamentPage() {
                         name="registrationDeadline"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Registration Deadline</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Registration Deadline</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <Input type="date" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -425,14 +430,14 @@ export default function TournamentPage() {
 
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-medium">Venue Details</h3>
+                        <h3 className="text-sm font-medium text-[#C4A44E]">Venue Details</h3>
                       </div>
                       <FormField
                         control={form.control}
                         name="venueId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Select Venue</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Select Venue</FormLabel>
                             <Select onValueChange={field.onChange}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a venue" />
@@ -457,9 +462,9 @@ export default function TournamentPage() {
                         name="participants"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Number of Participants</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Number of Participants</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} min="2" />
+                              <Input type="number" {...field} min="2" className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -471,9 +476,9 @@ export default function TournamentPage() {
                         name="prize"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Prize Pool ($)</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Prize Pool ($)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} min="0" />
+                              <Input type="number" {...field} min="0" className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -487,9 +492,9 @@ export default function TournamentPage() {
                         name="participationFee"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Entry Fee ($)</FormLabel>
+                            <FormLabel className="text-[#C4A44E]">Entry Fee ($)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} min="0" />
+                              <Input type="number" {...field} min="0" className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -502,11 +507,11 @@ export default function TournamentPage() {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel className="text-[#C4A44E]">Description</FormLabel>
                           <FormControl>
                             <textarea
                               {...field}
-                              className="w-full p-2 border rounded-md bg-background min-h-[100px]"
+                              className="w-full p-2 border rounded-md bg-background min-h-[100px] border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
                               placeholder="Enter tournament description"
                             />
                           </FormControl>
@@ -520,9 +525,9 @@ export default function TournamentPage() {
                       name="organizerDetails.contactEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Email</FormLabel>
+                          <FormLabel className="text-[#C4A44E]">Contact Email</FormLabel>
                           <FormControl>
-                            <Input type="email" {...field} />
+                            <Input type="email" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -533,9 +538,9 @@ export default function TournamentPage() {
                       name="organizerDetails.contactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Phone</FormLabel>
+                          <FormLabel className="text-[#C4A44E]">Contact Phone</FormLabel>
                           <FormControl>
-                            <Input type="tel" {...field} />
+                            <Input type="tel" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -546,9 +551,9 @@ export default function TournamentPage() {
                       name="organizerDetails.website"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Website</FormLabel>
+                          <FormLabel className="text-[#C4A44E]">Website</FormLabel>
                           <FormControl>
-                            <Input type="url" {...field} />
+                            <Input type="url" {...field} className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -571,7 +576,7 @@ export default function TournamentPage() {
                       )}
                       <Button 
                         type="submit" 
-                        className="w-full"
+                        className="w-full bg-[#C4A44E] hover:bg-[#D4C28A] text-white shadow-md transition-all duration-200"
                         disabled={form.formState.isSubmitting}
                       >
                         {form.formState.isSubmitting ? (
@@ -598,20 +603,32 @@ export default function TournamentPage() {
       </div>
 
       <Tabs defaultValue="upcoming" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="ongoing" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-4 border-b border-[#C4A44E]/20">
+          <TabsTrigger 
+            value="ongoing" 
+            className="flex items-center gap-2 text-[#D4C28A] data-[state=active]:text-[#C4A44E] data-[state=active]:border-b-2 data-[state=active]:border-[#C4A44E]"
+          >
             <Timer className="h-4 w-4" />
             Live Matches
           </TabsTrigger>
-          <TabsTrigger value="upcoming" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="upcoming"
+            className="flex items-center gap-2 text-[#D4C28A] data-[state=active]:text-[#C4A44E] data-[state=active]:border-b-2 data-[state=active]:border-[#C4A44E]"
+          >
             <Calendar className="h-4 w-4" />
             Upcoming
           </TabsTrigger>
-          <TabsTrigger value="past" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="past"
+            className="flex items-center gap-2 text-[#D4C28A] data-[state=active]:text-[#C4A44E] data-[state=active]:border-b-2 data-[state=active]:border-[#C4A44E]"
+          >
             <History className="h-4 w-4" />
             Past Tournaments
           </TabsTrigger>
-          <TabsTrigger value="analysis" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="analysis"
+            className="flex items-center gap-2 text-[#D4C28A] data-[state=active]:text-[#C4A44E] data-[state=active]:border-b-2 data-[state=active]:border-[#C4A44E]"
+          >
             <BarChart className="h-4 w-4" />
             Match Analysis
           </TabsTrigger>
@@ -621,12 +638,12 @@ export default function TournamentPage() {
           <div className="space-y-6">
             {ongoing.length > 0 ? (
               ongoing.map(tournament => (
-                <Card key={tournament.id}>
+                <Card key={tournament.id} className="border-[#C4A44E]/20 bg-[#062128] shadow-lg">
                   <CardHeader>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5 text-primary" />
-                        <CardTitle>{tournament.name}</CardTitle>
+                        <Trophy className="h-5 w-5 text-[#C4A44E]" />
+                        <CardTitle className="text-[#C4A44E]">{tournament.name}</CardTitle>
                       </div>
                       <div className="flex gap-2">
                         {user?.role === 'admin' && tournament.status === 'upcoming' && (
@@ -654,7 +671,7 @@ export default function TournamentPage() {
                         {renderRegistrationButtons(tournament)}
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-[#D4C28A]">
                       {tournament.description}
                     </div>
                   </CardHeader>
@@ -662,41 +679,41 @@ export default function TournamentPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
+                          <Calendar className="h-4 w-4 text-[#D4C28A]" />
+                          <span className="text-sm text-[#D4C28A]">
                             {new Date(tournament.startDate).toLocaleDateString()} -
                             {new Date(tournament.endDate).toLocaleDateString()}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
+                          <Users className="h-4 w-4 text-[#D4C28A]" />
+                          <span className="text-sm text-[#D4C28A]">
                             {tournament.currentParticipants} / {tournament.participants} participants
                           </span>
                         </div>
                         <div className="space-y-2">
-                          <p className="text-lg font-bold">
+                          <p className="text-lg font-bold text-[#C4A44E]">
                             Prize Pool: ${tournament.prize.toLocaleString()}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-[#D4C28A]">
                             Entry Fee: ${tournament.participationFee.toLocaleString()}
                           </p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm font-medium">Format</p>
-                          <p className="text-sm text-muted-foreground">{tournament.format}</p>
+                          <p className="text-sm font-medium text-[#C4A44E]">Format</p>
+                          <p className="text-sm text-[#D4C28A]">{tournament.format}</p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Registration Deadline</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm font-medium text-[#C4A44E]">Registration Deadline</p>
+                          <p className="text-sm text-[#D4C28A]">
                             {new Date(tournament.registrationDeadline).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Status</p>
-                          <p className="text-sm text-muted-foreground capitalize">{tournament.status}</p>
+                          <p className="text-sm font-medium text-[#C4A44E]">Status</p>
+                          <p className="text-sm text-[#D4C28A] capitalize">{tournament.status}</p>
                         </div>
                       </div>
                     </div>
@@ -704,7 +721,7 @@ export default function TournamentPage() {
                 </Card>
               ))
             ) : (
-              <p className="text-center text-muted-foreground">No live matches at the moment.</p>
+              <p className="text-center text-[#D4C28A]">No live matches at the moment.</p>
             )}
           </div>
         </TabsContent>
@@ -713,12 +730,12 @@ export default function TournamentPage() {
           <div className="space-y-6">
             {upcoming.length > 0 ? (
               upcoming.map(tournament => (
-                <Card key={tournament.id}>
+                <Card key={tournament.id} className="border-[#C4A44E]/20 bg-[#062128] shadow-lg">
                   <CardHeader>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5 text-primary" />
-                        <CardTitle>{tournament.name}</CardTitle>
+                        <Trophy className="h-5 w-5 text-[#C4A44E]" />
+                        <CardTitle className="text-[#C4A44E]">{tournament.name}</CardTitle>
                       </div>
                       <div className="flex gap-2">
                         {user?.role === 'admin' && tournament.status === 'upcoming' && (
@@ -746,7 +763,7 @@ export default function TournamentPage() {
                         {renderRegistrationButtons(tournament)}
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-[#D4C28A]">
                       {tournament.description}
                     </div>
                   </CardHeader>
@@ -754,41 +771,41 @@ export default function TournamentPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
+                          <Calendar className="h-4 w-4 text-[#D4C28A]" />
+                          <span className="text-sm text-[#D4C28A]">
                             {new Date(tournament.startDate).toLocaleDateString()} -
                             {new Date(tournament.endDate).toLocaleDateString()}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
+                          <Users className="h-4 w-4 text-[#D4C28A]" />
+                          <span className="text-sm text-[#D4C28A]">
                             {tournament.currentParticipants} / {tournament.participants} participants
                           </span>
                         </div>
                         <div className="space-y-2">
-                          <p className="text-lg font-bold">
+                          <p className="text-lg font-bold text-[#C4A44E]">
                             Prize Pool: ${tournament.prize.toLocaleString()}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-[#D4C28A]">
                             Entry Fee: ${tournament.participationFee.toLocaleString()}
                           </p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm font-medium">Format</p>
-                          <p className="text-sm text-muted-foreground">{tournament.format}</p>
+                          <p className="text-sm font-medium text-[#C4A44E]">Format</p>
+                          <p className="text-sm text-[#D4C28A]">{tournament.format}</p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Registration Deadline</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm font-medium text-[#C4A44E]">Registration Deadline</p>
+                          <p className="text-sm text-[#D4C28A]">
                             {new Date(tournament.registrationDeadline).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Status</p>
-                          <p className="text-sm text-muted-foreground capitalize">{tournament.status}</p>
+                          <p className="text-sm font-medium text-[#C4A44E]">Status</p>
+                          <p className="text-sm text-[#D4C28A] capitalize">{tournament.status}</p>
                         </div>
                       </div>
                     </div>
@@ -796,7 +813,7 @@ export default function TournamentPage() {
                 </Card>
               ))
             ) : (
-              <p className="text-center text-muted-foreground">No upcoming tournaments.</p>
+              <p className="text-center text-[#D4C28A]">No upcoming tournaments.</p>
             )}
           </div>
         </TabsContent>
@@ -805,18 +822,18 @@ export default function TournamentPage() {
           <div className="space-y-6">
             {past.length > 0 ? (
               past.map(tournament => (
-                <Card key={tournament.id}>
+                <Card key={tournament.id} className="border-[#C4A44E]/20 bg-[#062128] shadow-lg">
                   <CardHeader>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5 text-primary" />
-                        <CardTitle>{tournament.name}</CardTitle>
+                        <Trophy className="h-5 w-5 text-[#C4A44E]" />
+                        <CardTitle className="text-[#C4A44E]">{tournament.name}</CardTitle>
                       </div>
                       <div className="flex gap-2">
                         {renderRegistrationButtons(tournament)}
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-[#D4C28A]">
                       {tournament.description}
                     </div>
                   </CardHeader>
@@ -824,41 +841,41 @@ export default function TournamentPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
+                          <Calendar className="h-4 w-4 text-[#D4C28A]" />
+                          <span className="text-sm text-[#D4C28A]">
                             {new Date(tournament.startDate).toLocaleDateString()} -
                             {new Date(tournament.endDate).toLocaleDateString()}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
+                          <Users className="h-4 w-4 text-[#D4C28A]" />
+                          <span className="text-sm text-[#D4C28A]">
                             {tournament.currentParticipants} / {tournament.participants} participants
                           </span>
                         </div>
                         <div className="space-y-2">
-                          <p className="text-lg font-bold">
+                          <p className="text-lg font-bold text-[#C4A44E]">
                             Prize Pool: ${tournament.prize.toLocaleString()}
                           </p>
-                          <p className="sm text-muted-foreground">
+                          <p className="text-sm text-[#D4C28A]">
                             Entry Fee: ${tournament.participationFee.toLocaleString()}
                           </p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm font-medium">Format</p>
-                          <p className="text-sm text-muted-foreground">{tournament.format}</p>
+                          <p className="text-sm font-medium text-[#C4A44E]">Format</p>
+                          <p className="text-sm text-[#D4C28A]">{tournament.format}</p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Registration Deadline</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm font-medium text-[#C4A44E]">Registration Deadline</p>
+                          <p className="text-sm text-[#D4C28A]">
                             {new Date(tournament.registrationDeadline).toLocaleDateString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Status</p>
-                          <p className="text-sm text-muted-foreground capitalize">{tournament.status}</p>
+                          <p className="text-sm font-medium text-[#C4A44E]">Status</p>
+                          <p className="text-sm text-[#D4C28A] capitalize">{tournament.status}</p>
                         </div>
                       </div>
                     </div>
@@ -866,14 +883,14 @@ export default function TournamentPage() {
                 </Card>
               ))
             ) : (
-              <p className="text-center text-muted-foreground">No past tournaments.</p>
+              <p className="text-center text-[#D4C28A]">No past tournaments.</p>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="analysis">
           <div className="space-y-6">
-            <p className="text-center text-muted-foreground">Match analysis feature coming soon.</p>
+            <p className="text-center text-[#D4C28A]">Match analysis feature coming soon.</p>
           </div>
         </TabsContent>
       </Tabs>
