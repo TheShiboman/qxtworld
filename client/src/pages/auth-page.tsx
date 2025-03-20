@@ -40,15 +40,14 @@ export default function AuthPage() {
     }
   });
 
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-[#041d21] to-[#062128] flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8">
         <div className="flex flex-col justify-center">
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <Trophy className="h-12 w-12 text-primary" />
-              <h1 className="text-4xl font-bold">QXT World</h1>
+              <Trophy className="h-16 w-16 text-[#c4a45b]" />
+              <h1 className="text-5xl font-bold text-[#c4a45b]">QXT World</h1>
             </div>
             <p className="text-xl text-muted-foreground">
               Welcome to the future of cue sports. Join our digital ecosystem for tournaments,
@@ -57,15 +56,16 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Welcome to QXT World</CardTitle>
+        <Card className="w-full border-[#c4a45b] shadow-gold">
+          <CardHeader className="text-center">
+            <Trophy className="h-12 w-12 text-[#c4a45b] mx-auto mb-4" />
+            <CardTitle className="text-3xl font-bold text-[#c4a45b]">Welcome to QXT World</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login" className="text-[#c4a45b] data-[state=active]:bg-[#062128] data-[state=active]:text-[#e6c680]">Login</TabsTrigger>
+                <TabsTrigger value="register" className="text-[#c4a45b] data-[state=active]:bg-[#062128] data-[state=active]:text-[#e6c680]">Register</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login" className="space-y-4">
@@ -76,9 +76,9 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Username</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} className="border-[#c4a45b] focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -89,15 +89,19 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" {...field} className="border-[#c4a45b] focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-[#c4a45b] hover:bg-[#e6c680] text-white shadow-md transition-colors"
+                      disabled={loginMutation.isPending}
+                    >
                       Login
                     </Button>
                   </form>
@@ -112,9 +116,9 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Username</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} className="border-[#c4a45b] focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -125,9 +129,9 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" {...field} className="border-[#c4a45b] focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -138,9 +142,9 @@ export default function AuthPage() {
                       name="passwordConfirm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Confirm Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input type="password" {...field} className="border-[#c4a45b] focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -151,9 +155,9 @@ export default function AuthPage() {
                       name="fullName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Full Name</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} className="border-[#c4a45b] focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -164,9 +168,9 @@ export default function AuthPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Email</FormLabel>
                           <FormControl>
-                            <Input type="email" {...field} />
+                            <Input type="email" {...field} className="border-[#c4a45b] focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -177,11 +181,11 @@ export default function AuthPage() {
                       name="role"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Role</FormLabel>
+                          <FormLabel className="text-[#c4a45b]">Role</FormLabel>
                           <FormControl>
                             <select
                               {...field}
-                              className="w-full px-3 py-2 border rounded-md bg-background"
+                              className="w-full px-3 py-2 border rounded-md border-[#c4a45b] bg-background focus:ring-[#c4a45b] focus:border-[#e6c680] transition-colors"
                             >
                               <option value="player">Player</option>
                               <option value="coach">Coach</option>
@@ -192,7 +196,11 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-[#c4a45b] hover:bg-[#e6c680] text-white shadow-md transition-colors"
+                      disabled={registerMutation.isPending}
+                    >
                       Register
                     </Button>
                   </form>
