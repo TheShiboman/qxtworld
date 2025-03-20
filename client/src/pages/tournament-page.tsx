@@ -67,25 +67,21 @@ export default function TournamentPage() {
       const formattedData = {
         ...values,
         organizerId: user!.id,
-        type: values.matchType,
-        // Basic data transformations
+        // Format dates
         startDate: new Date(values.startDate).toISOString(),
         endDate: new Date(values.endDate).toISOString(),
         registrationDeadline: new Date(values.registrationDeadline).toISOString(),
-        participants: Number(values.participants),
-        prize: Number(values.prize),
-        participationFee: Number(values.participationFee),
-        venueId: values.venueId ? Number(values.venueId) : undefined,
-        // Default values
+        // Set default values
         status: "upcoming",
         currentParticipants: 0,
         currentRound: 1,
-        // Required details
+        // Set organizer details
         organizerDetails: {
           contactEmail: user?.email || "",
           contactPhone: values.organizerDetails.contactPhone,
           website: values.organizerDetails.website || ""
         },
+        // Initialize empty arrays
         bracket: [],
         rules: [],
         sponsorships: [],
@@ -110,8 +106,8 @@ export default function TournamentPage() {
     } catch (error: any) {
       console.error("Error creating tournament:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to create tournament",
+        title: "Error creating tournament",
+        description: error.message || "Something went wrong",
         variant: "destructive"
       });
     } finally {

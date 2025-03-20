@@ -1,7 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { z } from "zod";
 
-// Keep type definitions
+// Keep the existing type definitions
 export const cueSportsDisciplines = [
   'Snooker',
   'American Pool',
@@ -26,14 +26,7 @@ export const disciplineTypes = {
 
 export type DisciplineType = typeof disciplineTypes[keyof typeof disciplineTypes][number];
 
-export const matchTypes = [
-  'Single',
-  'Doubles',
-  'Scottish Doubles',
-  'Mixed Doubles',
-  'Teams'
-] as const;
-
+export const matchTypes = ['Single', 'Doubles', 'Scottish Doubles', 'Mixed Doubles', 'Teams'] as const;
 export type MatchType = typeof matchTypes[number];
 
 export const tournamentFormats = [
@@ -53,7 +46,7 @@ export const tournaments = pgTable("tournaments", {
   name: text("name").notNull(),
   discipline: text("discipline", { enum: cueSportsDisciplines }).notNull(),
   disciplineType: text("discipline_type").notNull(),
-  matchType: text("matchType", { enum: matchTypes }).notNull().default('Single'),
+  matchType: text("matchType", { enum: matchTypes }).notNull(),
   organizerId: integer("organizer_id").notNull(),
   venueId: integer("venue_id"),
   startDate: timestamp("start_date").notNull(),
@@ -72,41 +65,49 @@ export const tournaments = pgTable("tournaments", {
   bracket: jsonb("bracket").notNull().default([]),
   rules: jsonb("rules").default([]),
   sponsorships: jsonb("sponsorships").default([]),
-  organizerDetails: jsonb("organizer_details").notNull().default({
-    contactEmail: "",
-    contactPhone: "",
-    website: ""
-  }),
+  organizerDetails: jsonb("organizer_details").notNull(),
   prizeBreakdown: jsonb("prize_breakdown").default([])
 });
 
-// Simplified form validation schema
+// Form validation schema
 export const insertTournamentSchema = z.object({
   name: z.string().min(1, "Tournament name is required"),
-  discipline: z.enum(cueSportsDisciplines, {
-    errorMap: () => ({ message: "Please select a discipline" })
-  }),
+  discipline: z.enum(cueSportsDisciplines),
   disciplineType: z.string().min(1, "Please select a discipline type"),
-  matchType: z.enum(matchTypes, {
-    errorMap: () => ({ message: "Please select a match type" })
-  }),
-  format: z.enum(tournamentFormats, {
-    errorMap: () => ({ message: "Please select a tournament format" })
-  }),
+  matchType: z.enum(matchTypes),
+  format: z.enum(tournamentFormats),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   registrationDeadline: z.string().min(1, "Registration deadline is required"),
-  participants: z.string().min(1, "Number of participants is required"),
-  prize: z.string().min(1, "Prize amount is required"),
-  participationFee: z.string().min(1, "Entry fee is required"),
+  participants: z.coerce.number().min(2, "Minimum 2 participants required"),
+  prize: z.coerce.number().min(0, "Prize amount must be 0 or greater"),
+  participationFee: z.coerce.number().min(0, "Entry fee must be 0 or greater"),
   description: z.string().min(1, "Description is required"),
   venueId: z.string().optional(),
   organizerDetails: z.object({
     contactPhone: z.string().min(1, "Contact phone is required"),
-    website: z.string().optional()
+    website: z.string().optional().default("")
   })
+}).refine(data => {
+  const start = new Date(data.startDate);
+  const end = new Date(data.endDate);
+  const regDeadline = new Date(data.registrationDeadline);
+  const today = new Date();
+
+  if (start < today) {
+    return false;
+  }
+  if (end < start) {
+    return false;
+  }
+  if (regDeadline > start) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Invalid dates: Start date must be in the future, end date must be after start date, and registration deadline must be before start date"
 });
 
 // Types
-export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
+export type InsertTournament = z.infer<typeof insertTournamentSchema>;
