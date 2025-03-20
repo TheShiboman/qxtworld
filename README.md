@@ -47,7 +47,7 @@ A comprehensive digital platform for managing cue sports tournaments, featuring 
   - Express.js server
   - PostgreSQL database
   - Drizzle ORM
-  - Passport.js authentication
+  - Passport.js authentication (with planned migration to Firebase)
   - WebSocket server
 
 ## Prerequisites
@@ -61,10 +61,31 @@ A comprehensive digital platform for managing cue sports tournaments, featuring 
 The following environment variables are required:
 
 ```env
+# Database Configuration
 DATABASE_URL=postgresql://...
+
+# Session Configuration
 SESSION_SECRET=your_session_secret
-STRIPE_SECRET_KEY=your_stripe_secret
-STRIPE_PUBLIC_KEY=your_stripe_public
+
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# JWT Secret (Optional - For future use)
+JWT_SECRET=your_jwt_secret_here
+
+# WebSocket Configuration
+WS_PORT=5001
+
+# QXT World Specific Configuration
+TOURNAMENT_REGISTRATION_DEADLINE_DAYS=7
+MAX_PARTICIPANTS_PER_TOURNAMENT=64
+
+# Admin Configuration
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_secure_password_here
+ADMIN_FULL_NAME=System Administrator
+ADMIN_EMAIL=admin@qxtworld.com
 ```
 
 ## Getting Started
@@ -107,6 +128,22 @@ The application will be available at `http://localhost:5000`
 └── shared/           # Shared types and schemas
 ```
 
+## Authentication
+
+Currently, the project uses Passport.js with PostgreSQL for authentication. A future migration to Firebase Authentication is planned to enhance features and scalability.
+
+### Current Authentication System
+- Local authentication strategy with username/password
+- Session-based authentication using express-session
+- Secure password hashing with scrypt
+- Role-based access control (admin, player, etc.)
+
+### Planned Firebase Migration
+- Google OAuth integration
+- Enhanced security features
+- Real-time user presence
+- Cross-platform authentication
+
 ## Deployment
 
 This application is configured for deployment on Replit:
@@ -148,6 +185,7 @@ npm run test:coverage
 - [ ] Mobile application development
 - [ ] Integration with additional payment providers
 - [ ] Enhanced live streaming capabilities
+- [ ] Migration to Firebase Authentication
 
 ## License
 

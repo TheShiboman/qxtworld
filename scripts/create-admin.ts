@@ -11,16 +11,19 @@ async function hashPassword(password: string) {
 }
 
 async function createAdmin() {
-  const password = "admin123";
-  const hashedPassword = await hashPassword(password);
-  
+  if (!process.env.ADMIN_PASSWORD) {
+    throw new Error("ADMIN_PASSWORD environment variable is required");
+  }
+
+  const hashedPassword = await hashPassword(process.env.ADMIN_PASSWORD);
+
   try {
     const admin = await storage.createUser({
-      username: "admin",
+      username: process.env.ADMIN_USERNAME || "admin",
       password: hashedPassword,
       role: "admin",
-      fullName: "System Administrator",
-      email: "admin@qxtworld.com"
+      fullName: process.env.ADMIN_FULL_NAME || "System Administrator",
+      email: process.env.ADMIN_EMAIL || "admin@qxtworld.com"
     });
     console.log("Admin user created successfully:", admin.username);
   } catch (error) {
