@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Tournament, cueSportsDisciplines, matchTypes, tournamentFormats, disciplineTypes, insertTournamentSchema } from "@shared/schema";
+import { Tournament, cueSportsDisciplines, matchTypes, tournamentFormats, insertTournamentSchema } from "@shared/schema";
 import { Trophy, Users, Calendar, Loader2, Timer, History, BarChart, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -21,14 +21,6 @@ export default function TournamentPage() {
   const [venueDialogOpen, setVenueDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
-    queryKey: ["/api/tournaments"],
-  });
-
-  const { data: venues = [], refetch: refetchVenues } = useQuery({
-    queryKey: ["/api/venues"],
-  });
-
   const form = useForm({
     resolver: zodResolver(insertTournamentSchema),
     defaultValues: {
@@ -37,14 +29,13 @@ export default function TournamentPage() {
       disciplineType: "Full Reds",
       matchType: "Single",
       format: "Single Elimination",
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      registrationDeadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      participants: "32",
-      prize: "1000",
-      participationFee: "20",
+      startDate: "",
+      endDate: "",
+      registrationDeadline: "",
+      participants: 32,
+      prize: 1000,
+      participationFee: 20,
       description: "",
-      venueId: "",
       organizerDetails: {
         contactPhone: "",
         website: ""
@@ -52,7 +43,17 @@ export default function TournamentPage() {
     }
   });
 
-  const selectedDiscipline = form.watch("discipline") as keyof typeof disciplineTypes;
+  const selectedDiscipline = form.watch("discipline");
+
+  const disciplineTypes = {
+    'Snooker': ['Full Reds', 'Six Reds'],
+    'American Pool': ['8 Ball', '9 Ball', '10 Ball'],
+    'Chinese Pool': ['Standard', 'Pro Format'],
+    'Carom': ['3-Cushion', '1-Cushion'],
+    'Billiards': ['English Billiards'],
+    'Black Ball': ['Standard'],
+    'Russian Pyramid': ['Free Pyramid', 'Dynamic Pyramid']
+  };
 
   React.useEffect(() => {
     if (disciplineTypes[selectedDiscipline]) {
@@ -67,26 +68,18 @@ export default function TournamentPage() {
       const formattedData = {
         ...values,
         organizerId: user!.id,
-        // Format dates
         startDate: new Date(values.startDate).toISOString(),
         endDate: new Date(values.endDate).toISOString(),
         registrationDeadline: new Date(values.registrationDeadline).toISOString(),
-        // Set default values
-        status: "upcoming",
-        currentParticipants: 0,
-        currentRound: 1,
-        // Set organizer details
+        participants: Number(values.participants),
+        prize: Number(values.prize),
+        participationFee: Number(values.participationFee),
+        venueId: values.venueId ? Number(values.venueId) : undefined,
         organizerDetails: {
           contactEmail: user?.email || "",
           contactPhone: values.organizerDetails.contactPhone,
           website: values.organizerDetails.website || ""
-        },
-        // Initialize empty arrays
-        bracket: [],
-        rules: [],
-        sponsorships: [],
-        prizeBreakdown: [],
-        roundStartTimes: []
+        }
       };
 
       const response = await apiRequest("POST", "/api/tournaments", formattedData);
@@ -99,21 +92,28 @@ export default function TournamentPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       toast({
         title: "Success",
-        description: "Tournament created successfully.",
+        description: "Tournament created successfully!",
       });
       setTournamentDialogOpen(false);
       form.reset();
     } catch (error: any) {
-      console.error("Error creating tournament:", error);
       toast({
-        title: "Error creating tournament",
-        description: error.message || "Something went wrong",
+        title: "Error",
+        description: error.message || "Failed to create tournament",
         variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const { data: tournaments = [], isLoading } = useQuery<Tournament[]>({
+    queryKey: ["/api/tournaments"],
+  });
+
+  const { data: venues = [], refetch: refetchVenues } = useQuery({
+    queryKey: ["/api/venues"],
+  });
 
   if (isLoading) {
     return (
@@ -156,7 +156,7 @@ export default function TournamentPage() {
                         onClick={() => setVenueDialogOpen(true)}
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Register New Venue
+                        Add New Venue
                       </Button>
                     </div>
                     <Select onValueChange={(value) => form.setValue("venueId", value)}>
@@ -166,7 +166,7 @@ export default function TournamentPage() {
                       <SelectContent>
                         {venues.map((venue: any) => (
                           <SelectItem key={venue.id} value={venue.id.toString()}>
-                            {venue.name} - {venue.city}, {venue.country}
+                            {venue.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -187,9 +187,6 @@ export default function TournamentPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {form.formState.errors.discipline && (
-                      <p className="text-sm text-red-500">{form.formState.errors.discipline.message}</p>
-                    )}
                   </div>
 
                   <div>
@@ -206,9 +203,6 @@ export default function TournamentPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {form.formState.errors.disciplineType && (
-                      <p className="text-sm text-red-500">{form.formState.errors.disciplineType.message}</p>
-                    )}
                   </div>
 
                   <div>
@@ -225,9 +219,6 @@ export default function TournamentPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {form.formState.errors.matchType && (
-                      <p className="text-sm text-red-500">{form.formState.errors.matchType.message}</p>
-                    )}
                   </div>
 
                   <div>
@@ -244,57 +235,36 @@ export default function TournamentPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {form.formState.errors.format && (
-                      <p className="text-sm text-red-500">{form.formState.errors.format.message}</p>
-                    )}
                   </div>
 
                   <div>
                     <label>Start Date</label>
                     <Input type="date" {...form.register("startDate")} />
-                    {form.formState.errors.startDate && (
-                      <p className="text-sm text-red-500">{form.formState.errors.startDate.message}</p>
-                    )}
                   </div>
 
                   <div>
                     <label>End Date</label>
                     <Input type="date" {...form.register("endDate")} />
-                    {form.formState.errors.endDate && (
-                      <p className="text-sm text-red-500">{form.formState.errors.endDate.message}</p>
-                    )}
                   </div>
 
                   <div>
                     <label>Registration Deadline</label>
                     <Input type="date" {...form.register("registrationDeadline")} />
-                    {form.formState.errors.registrationDeadline && (
-                      <p className="text-sm text-red-500">{form.formState.errors.registrationDeadline.message}</p>
-                    )}
                   </div>
 
                   <div>
                     <label>Number of Participants</label>
-                    <Input type="number" {...form.register("participants")} />
-                    {form.formState.errors.participants && (
-                      <p className="text-sm text-red-500">{form.formState.errors.participants.message}</p>
-                    )}
+                    <Input type="number" {...form.register("participants", { valueAsNumber: true })} />
                   </div>
 
                   <div>
                     <label>Prize Pool ($)</label>
-                    <Input type="number" {...form.register("prize")} />
-                    {form.formState.errors.prize && (
-                      <p className="text-sm text-red-500">{form.formState.errors.prize.message}</p>
-                    )}
+                    <Input type="number" {...form.register("prize", { valueAsNumber: true })} />
                   </div>
 
                   <div>
                     <label>Entry Fee ($)</label>
-                    <Input type="number" {...form.register("participationFee")} />
-                    {form.formState.errors.participationFee && (
-                      <p className="text-sm text-red-500">{form.formState.errors.participationFee.message}</p>
-                    )}
+                    <Input type="number" {...form.register("participationFee", { valueAsNumber: true })} />
                   </div>
 
                   <div>
@@ -303,9 +273,6 @@ export default function TournamentPage() {
                       {...form.register("description")}
                       className="w-full p-2 border rounded-md bg-background min-h-[100px]"
                     />
-                    {form.formState.errors.description && (
-                      <p className="text-sm text-red-500">{form.formState.errors.description.message}</p>
-                    )}
                   </div>
 
                   <div className="space-y-4">
@@ -313,16 +280,10 @@ export default function TournamentPage() {
                     <div>
                       <label>Contact Phone</label>
                       <Input {...form.register("organizerDetails.contactPhone")} />
-                      {form.formState.errors.organizerDetails?.contactPhone && (
-                        <p className="text-sm text-red-500">{form.formState.errors.organizerDetails.contactPhone.message}</p>
-                      )}
                     </div>
                     <div>
                       <label>Website (Optional)</label>
                       <Input {...form.register("organizerDetails.website")} />
-                      {form.formState.errors.organizerDetails?.website && (
-                        <p className="text-sm text-red-500">{form.formState.errors.organizerDetails.website.message}</p>
-                      )}
                     </div>
                   </div>
 
