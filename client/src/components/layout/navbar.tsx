@@ -30,8 +30,8 @@ export default function Navbar() {
   return (
     <nav className="border-b">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between h-16 items-center">
-          <div className="relative -top-3 left-6">
+        <div className="flex justify-between h-24 items-center"> {/* Increased height to accommodate logo shift */}
+          <div className="absolute top-20 left-6"> {/* Adjusted top position */}
             <Logo />
           </div>
 
