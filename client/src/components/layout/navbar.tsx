@@ -31,7 +31,7 @@ export default function Navbar() {
     <nav className="border-b">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16 items-center">
-          <div className="relative -top-6">
+          <div className="relative -top-4">
             <Logo />
           </div>
 
