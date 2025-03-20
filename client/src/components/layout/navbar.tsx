@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/ui/logo";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -30,9 +31,9 @@ export default function Navbar() {
     <nav className="border-b">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16 items-center">
-          <Link href="/">
-            <a className="text-2xl font-bold">QXT World</a>
-          </Link>
+          <div className="relative -top-6">
+            <Logo />
+          </div>
 
           <NavigationMenu>
             <NavigationMenuList className="flex gap-4">
