@@ -1,1 +1,2 @@
-// This file is being removed as we're consolidating Firebase configuration into firebase.ts
+// This file is deprecated and being removed
+// All Firebase configuration has been moved to firebase.ts

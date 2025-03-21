@@ -45,7 +45,7 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Update the verifyFirebaseToken middleware with better error handling
+// Update verifyFirebaseToken middleware with better error handling
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
   // Skip Firebase verification for traditional login and registration routes
   if (req.path === '/api/login' || req.path === '/api/register') {
@@ -102,8 +102,8 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
           email: decodedToken.email || '',
           fullName: decodedToken.name || '',
           password: '', // Not used for Google auth
-          role: 'player',
-          rating: 1500
+          passwordConfirm: '', // Add this required field
+          role: 'player'
         });
         console.log('New user created successfully:', {
           email: user.email,
