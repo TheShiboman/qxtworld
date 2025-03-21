@@ -83,8 +83,8 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Initialize WebSocket service with explicit port
-  const wsPort = 5001;
+  // Initialize WebSocket service with port from environment variable
+  const wsPort = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 443;
   initializeWebSocket(server, wsPort);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -100,7 +100,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const port = 5000;
+  const port = process.env.PORT || 5000;
   server.listen({
     port,
     host: "0.0.0.0",
