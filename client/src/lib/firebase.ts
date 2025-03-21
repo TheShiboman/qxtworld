@@ -26,6 +26,14 @@ if (!appId) {
   throw new Error("Firebase app ID is not configured");
 }
 
+// Log configuration status (safely - without exposing full key)
+console.log('Firebase Configuration Status:', {
+  apiKeyFormat: 'AIza' + '*'.repeat(apiKey.length - 8) + apiKey.slice(-4),
+  apiKeyLength: apiKey.length,
+  projectId,
+  configurationValid: true
+});
+
 const firebaseConfig = {
   apiKey,
   authDomain: `${projectId}.firebaseapp.com`,
