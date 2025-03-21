@@ -7,6 +7,11 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  // Add OAuth configuration
+  oauth: {
+    clientId: import.meta.env.GOOGLE_CLIENT_ID,
+    clientSecret: import.meta.env.GOOGLE_CLIENT_SECRET
+  }
 };
 
 // Initialize Firebase
