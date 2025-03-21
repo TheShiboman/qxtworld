@@ -7,6 +7,18 @@ console.log('Loading Firebase configuration...', {
   appIdExists: !!import.meta.env.VITE_FIREBASE_APP_ID
 });
 
+if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+  throw new Error('Firebase API key is not configured');
+}
+
+if (!import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+  throw new Error('Firebase project ID is not configured');
+}
+
+if (!import.meta.env.VITE_FIREBASE_APP_ID) {
+  throw new Error('Firebase app ID is not configured');
+}
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
@@ -19,10 +31,11 @@ const firebaseConfig = {
 
 console.log('Initializing Firebase with configuration:', {
   authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket
 });
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 console.log('Firebase app initialized successfully');
+
 export default app;

@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
 export function useFirebaseAuth() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -23,9 +24,14 @@ export function useFirebaseAuth() {
         if (result) {
           // The signed-in user info is in result.user
           setUser(result.user);
-          toast({
-            title: "Success",
-            description: "Successfully signed in with Google",
+          // Force a token refresh to ensure we have a fresh token
+          return result.user.getIdToken(true).then(() => {
+            // Invalidate queries to refetch with new token
+            queryClient.invalidateQueries();
+            toast({
+              title: "Success",
+              description: "Successfully signed in with Google",
+            });
           });
         }
       })
@@ -34,7 +40,7 @@ export function useFirebaseAuth() {
         console.error("Redirect sign-in error:", error);
         toast({
           title: "Error",
-          description: "Failed to sign in with Google",
+          description: "Failed to sign in with Google. Please try again.",
           variant: "destructive",
         });
       });
@@ -44,11 +50,22 @@ export function useFirebaseAuth() {
         console.log("Auth state changed:", user?.email);
         setUser(user);
         setLoading(false);
+        if (user) {
+          // Refresh token on auth state change
+          user.getIdToken(true).then(() => {
+            queryClient.invalidateQueries();
+          });
+        }
       },
       (error) => {
         console.error("Auth state change error:", error);
         setError(error);
         setLoading(false);
+        toast({
+          title: "Authentication Error",
+          description: "There was a problem with authentication. Please try again.",
+          variant: "destructive",
+        });
       }
     );
 
@@ -61,6 +78,12 @@ export function useFirebaseAuth() {
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       setError(error as Error);
+      console.error("Sign in error:", error);
+      toast({
+        title: "Sign In Error",
+        description: "Failed to start Google sign-in. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -69,8 +92,15 @@ export function useFirebaseAuth() {
     try {
       await signOut(auth);
       setUser(null);
+      queryClient.clear(); // Clear all queries on sign out
     } catch (error) {
       setError(error as Error);
+      console.error("Sign out error:", error);
+      toast({
+        title: "Sign Out Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     }
   };
