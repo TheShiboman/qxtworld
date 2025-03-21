@@ -70,7 +70,10 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
     }
 
     const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log('Token verified successfully for user:', decodedToken.email);
+    console.log('Token verified successfully for:', {
+      email: decodedToken.email,
+      uid: decodedToken.uid
+    });
 
     // Check if user exists in our database
     let user = await storage.getUserByEmail(decodedToken.email || '');
@@ -79,27 +82,48 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
     if (!user) {
       console.log('Creating new user from Google sign-in:', decodedToken.email);
       try {
+        // Clear any existing session
+        if (req.session) {
+          await new Promise((resolve, reject) => {
+            req.session.destroy((err) => {
+              if (err) reject(err);
+              resolve(true);
+            });
+          });
+        }
+
         user = await storage.createUser({
-          username: decodedToken.email || '',
+          username: decodedToken.email?.split('@')[0] || '',
           email: decodedToken.email || '',
           fullName: decodedToken.name || '',
           password: '', // Not used for Google auth
           role: 'player',
           rating: 1500
         });
-        console.log('New user created successfully:', user.email);
+        console.log('New user created successfully:', {
+          email: user.email,
+          id: user.id
+        });
       } catch (createError) {
         console.error('Error creating new user:', createError);
         return res.status(500).json({ message: 'Failed to create user account' });
       }
+    } else {
+      console.log('Existing user found:', {
+        email: user.email,
+        id: user.id
+      });
     }
 
-    // Set user info from database
-    req.user = user;
-    console.log('User object set:', {
-      email: req.user.email,
-      role: req.user.role
+    // Set user info from database and create new session
+    req.login(user, (err) => {
+      if (err) {
+        console.error('Error setting user session:', err);
+        return res.status(500).json({ message: 'Failed to create session' });
+      }
+      console.log('User session created successfully for:', user.email);
     });
+
     next();
   } catch (error: any) {
     console.error('Error verifying Firebase token:', {
@@ -228,6 +252,27 @@ export function setupAuth(app: Express) {
       console.error('Registration error:', error);
       next(error);
     }
+  });
+
+  app.post("/api/logout", (req, res, next) => {
+    console.log('Logout requested for user:', req.user?.email);
+
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return next(err);
+      }
+
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+          return next(err);
+        }
+        res.clearCookie("qxt.sid");
+        console.log('User logged out and session cleared successfully');
+        res.sendStatus(200);
+      });
+    });
   });
 
   app.get("/api/user", (req, res) => {
