@@ -17,22 +17,39 @@ export function useFirebaseAuth() {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
+  // Handle token refresh and query invalidation
+  const refreshTokenAndInvalidateQueries = async (user: FirebaseUser) => {
+    try {
+      console.log('Refreshing token for user:', user.email);
+      const token = await user.getIdToken(true);
+      console.log('Token refreshed successfully, length:', token.length);
+      // Invalidate all queries to refetch with new token
+      queryClient.invalidateQueries();
+      return token;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      toast({
+        title: "Authentication Error",
+        description: "Failed to refresh authentication. Please sign in again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     // Handle redirect result when component mounts
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-          // The signed-in user info is in result.user
           setUser(result.user);
-          // Force a token refresh to ensure we have a fresh token
-          return result.user.getIdToken(true).then(() => {
-            // Invalidate queries to refetch with new token
-            queryClient.invalidateQueries();
-            toast({
-              title: "Success",
-              description: "Successfully signed in with Google",
+          return refreshTokenAndInvalidateQueries(result.user)
+            .then(() => {
+              toast({
+                title: "Success",
+                description: "Successfully signed in with Google",
+              });
             });
-          });
         }
       })
       .catch((error) => {
@@ -46,15 +63,17 @@ export function useFirebaseAuth() {
       });
 
     const unsubscribe = onAuthStateChanged(auth, 
-      (user) => {
+      async (user) => {
         console.log("Auth state changed:", user?.email);
         setUser(user);
         setLoading(false);
+
         if (user) {
-          // Refresh token on auth state change
-          user.getIdToken(true).then(() => {
-            queryClient.invalidateQueries();
-          });
+          try {
+            await refreshTokenAndInvalidateQueries(user);
+          } catch (error) {
+            console.error('Failed to refresh token on auth state change:', error);
+          }
         }
       },
       (error) => {
@@ -75,6 +94,7 @@ export function useFirebaseAuth() {
   const signInWithGoogle = async () => {
     try {
       setError(null);
+      console.log('Initiating Google sign-in...');
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       setError(error as Error);
@@ -93,6 +113,7 @@ export function useFirebaseAuth() {
       await signOut(auth);
       setUser(null);
       queryClient.clear(); // Clear all queries on sign out
+      console.log('User signed out successfully');
     } catch (error) {
       setError(error as Error);
       console.error("Sign out error:", error);
