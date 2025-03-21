@@ -11,11 +11,14 @@ async function throwIfResNotOk(res: Response) {
 async function getAuthHeaders() {
   const user = auth.currentUser;
   if (!user) {
+    console.log('No current user found for auth headers');
     return {};
   }
 
   try {
+    console.log('Refreshing Firebase token...');
     const token = await user.getIdToken(true); // Force refresh token
+    console.log('Token refreshed successfully, length:', token.length);
     return {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -32,13 +35,11 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const headers = await getAuthHeaders();
+  console.log(`Making ${method} request to ${url}, auth header present:`, !!headers.Authorization);
 
   const res = await fetch(url, {
     method,
-    headers: {
-      ...headers,
-      ...(data ? { "Content-Type": "application/json" } : {}),
-    },
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -54,12 +55,15 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const headers = await getAuthHeaders();
+    console.log(`Making query request to ${queryKey[0]}, auth header present:`, !!headers.Authorization);
+
     const res = await fetch(queryKey[0] as string, {
       headers,
       credentials: "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      console.log('Received 401, returning null as configured');
       return null;
     }
 
