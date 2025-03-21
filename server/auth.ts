@@ -42,6 +42,11 @@ async function comparePasswords(supplied: string, stored: string) {
 
 // Update the verifyFirebaseToken middleware with better error handling
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
+  // Skip Firebase verification for traditional login routes
+  if (req.path === '/api/login' || req.path === '/api/register') {
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
   console.log('Token verification attempt:', {
     hasAuthHeader: !!authHeader,
@@ -88,7 +93,6 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
         fullName: decodedToken.name || '',
         password: '', // Not used for Google auth
         role: 'player',
-        rating: 1500,
         createdAt: new Date()
       });
       console.log('New user created:', user.email);
@@ -134,23 +138,40 @@ export function setupAuth(app: Express) {
       path: "/",
       domain: process.env.NODE_ENV === "production" ? ".replit.app" : undefined
     },
-    name: "qxt.sid",
-    rolling: true,
+    name: "qxt.sid"
   };
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Set up passport serialization
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  });
+
+  // Add Firebase token verification after session setup
   app.use(verifyFirebaseToken);
 
   // Traditional login route
   app.post("/api/login", async (req, res) => {
     try {
+      console.log('Traditional login attempt for username:', req.body.username);
       const { username, password } = req.body;
       const user = await storage.getUserByUsername(username);
 
       if (!user || !(await comparePasswords(password, user.password))) {
+        console.log('Login failed: Invalid credentials for username:', username);
         return res.status(401).json({ message: "Invalid username or password" });
       }
 
@@ -160,6 +181,7 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Login failed" });
         }
         const { password, ...safeUser } = user;
+        console.log('Login successful for user:', username);
         res.json(safeUser);
       });
     } catch (error) {
@@ -170,7 +192,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.user) {
-      return res.sendStatus(401);
+      return res.status(401).json({ message: "Not authenticated" });
     }
     const { password, ...safeUser } = req.user;
     res.json(safeUser);
