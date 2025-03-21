@@ -42,6 +42,7 @@ export function useFirebaseAuth() {
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
+          console.log('Google sign-in successful, user:', result.user.email);
           setUser(result.user);
           return refreshTokenAndInvalidateQueries(result.user)
             .then(() => {
@@ -62,6 +63,7 @@ export function useFirebaseAuth() {
         });
       });
 
+    // Set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, 
       async (user) => {
         console.log("Auth state changed:", user?.email);
@@ -73,6 +75,8 @@ export function useFirebaseAuth() {
             await refreshTokenAndInvalidateQueries(user);
           } catch (error) {
             console.error('Failed to refresh token on auth state change:', error);
+            // Force re-login on token refresh failure
+            signOutUser();
           }
         }
       },
@@ -114,6 +118,10 @@ export function useFirebaseAuth() {
       setUser(null);
       queryClient.clear(); // Clear all queries on sign out
       console.log('User signed out successfully');
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
     } catch (error) {
       setError(error as Error);
       console.error("Sign out error:", error);
