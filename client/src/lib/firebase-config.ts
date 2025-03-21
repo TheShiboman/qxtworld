@@ -2,50 +2,54 @@ import { initializeApp } from "firebase/app";
 
 // Retrieve API key from environment variables
 const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const appId = import.meta.env.VITE_FIREBASE_APP_ID;
 
-// Enhanced configuration validation logging
-if (!apiKey) {
-  console.error('Firebase configuration error: API key is missing');
-  throw new Error("Firebase API key is not configured");
+// Validate API key format (should start with 'AIza')
+if (!apiKey?.startsWith('AIza')) {
+  console.error('Firebase API key validation failed:', {
+    reason: 'Invalid format',
+    expected: 'Should start with AIza',
+    received: apiKey ? `Starts with ${apiKey.substring(0, 4)}` : 'No key provided'
+  });
+  throw new Error("Invalid Firebase API key format");
 }
 
-if (!import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+// Validate project configuration
+if (!projectId) {
   console.error('Firebase configuration error: Project ID is missing');
   throw new Error("Firebase project ID is not configured");
 }
 
-if (!import.meta.env.VITE_FIREBASE_APP_ID) {
+if (!appId) {
   console.error('Firebase configuration error: App ID is missing');
   throw new Error("Firebase app ID is not configured");
 }
 
 // Log configuration status (safely - without exposing full key)
 console.log('Firebase Configuration Status:', {
-  apiKeyPresent: !!apiKey,
-  apiKeyPrefix: apiKey?.substring(0, 4),
-  apiKeySuffix: apiKey?.substring(apiKey.length - 4),
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  configurationValid: !!(apiKey && import.meta.env.VITE_FIREBASE_PROJECT_ID && import.meta.env.VITE_FIREBASE_APP_ID)
+  apiKeyFormat: 'AIza' + '*'.repeat(apiKey.length - 8) + apiKey.slice(-4),
+  apiKeyLength: apiKey.length,
+  projectId,
+  configurationValid: true
 });
 
 const firebaseConfig = {
   apiKey,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  authDomain: `${projectId}.firebaseapp.com`,
+  projectId,
+  storageBucket: `${projectId}.appspot.com`,
   messagingSenderId: "689094503093",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  appId,
   measurementId: "G-PLY2H1V4VT"
 };
 
-// Initialize Firebase app with detailed error handling
 let app;
 try {
-  console.log('Attempting to initialize Firebase with configuration:', {
+  console.log('Initializing Firebase with configuration:', {
     projectId: firebaseConfig.projectId,
     authDomain: firebaseConfig.authDomain,
-    hasApiKey: !!firebaseConfig.apiKey,
-    apiKeyLength: firebaseConfig.apiKey?.length
+    apiKeyValid: apiKey.startsWith('AIza')
   });
   app = initializeApp(firebaseConfig);
   console.log('Firebase app initialized successfully');
@@ -53,6 +57,7 @@ try {
   console.error('Firebase initialization error:', {
     code: error.code,
     message: error.message,
+    details: error.customData ? JSON.stringify(error.customData) : undefined,
     stack: error.stack
   });
   throw error;
