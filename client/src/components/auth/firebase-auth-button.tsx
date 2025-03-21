@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { signInWithRedirect } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import { Loader2 } from "lucide-react";
 
 export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,23 +12,37 @@ export function FirebaseAuthButton() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      console.log('Starting Google sign-in process...');
+      console.log('Attempting Google sign-in...');
+
+      // Log Firebase configuration status
+      console.log('Firebase Configuration Check:', {
+        authInitialized: !!auth,
+        providerScopes: googleProvider.getScopes(),
+        customParams: googleProvider.getCustomParameters()
+      });
+
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
-      console.error('Google sign-in error:', {
+      console.error('Google Sign-in Error Details:', {
         code: error.code,
         message: error.message,
-        // Log additional error details if available
-        details: error.customData ? JSON.stringify(error.customData) : 'No additional details'
+        customData: error.customData ? JSON.stringify(error.customData) : 'No additional details',
+        stack: error.stack
       });
 
       let errorMessage = 'Failed to sign in with Google. ';
+
+      // Specific error handling for API key issues
       if (error.code === 'auth/invalid-api-key') {
-        errorMessage += 'Invalid API configuration. Please contact support.';
+        console.error('Invalid API Key Error:', {
+          message: 'Firebase API key validation failed',
+          suggestion: 'Check Firebase Console for correct Web API Key'
+        });
+        errorMessage += 'Authentication configuration error. Please contact support.';
       } else if (error.code === 'auth/operation-not-allowed') {
         errorMessage += 'Google sign-in is not enabled for this application.';
       } else {
-        errorMessage += 'Please try again.';
+        errorMessage += error.message || 'Please try again.';
       }
 
       toast({
