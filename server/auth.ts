@@ -42,7 +42,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 // Update the verifyFirebaseToken middleware with better error handling
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
-  // Skip Firebase verification for traditional login routes
+  // Skip Firebase verification for traditional login and registration routes
   if (req.path === '/api/login' || req.path === '/api/register') {
     return next();
   }
@@ -100,9 +100,9 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
 
     // Set user info from database
     req.user = user;
-    console.log('User object set:', { 
-      email: req.user.email, 
-      role: req.user.role 
+    console.log('User object set:', {
+      email: req.user.email,
+      role: req.user.role
     });
     next();
   } catch (error: any) {
@@ -187,6 +187,49 @@ export function setupAuth(app: Express) {
     } catch (error) {
       console.error('Login route error:', error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Add back the registration endpoint after the login route
+  app.post("/api/register", async (req, res, next) => {
+    try {
+      console.log('Traditional registration attempt for username:', req.body.username);
+
+      // Check for existing user by username
+      const existingUsername = await storage.getUserByUsername(req.body.username);
+      if (existingUsername) {
+        console.log('Registration failed: Username already exists:', req.body.username);
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Check for existing user by email
+      const existingEmail = await storage.getUserByEmail(req.body.email);
+      if (existingEmail) {
+        console.log('Registration failed: Email already exists:', req.body.email);
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      const hashedPassword = await hashPassword(req.body.password);
+      const user = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+        role: 'player'
+      });
+
+      console.log('User registered successfully:', user.email);
+
+      // Log the user in after registration
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Auto-login after registration failed:', err);
+          return next(err);
+        }
+        const { password, ...safeUser } = user;
+        res.status(201).json(safeUser);
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      next(error);
     }
   });
 
