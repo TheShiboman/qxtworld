@@ -76,18 +76,27 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
     const decodedToken = await admin.auth().verifyIdToken(token);
     console.log('Token verified successfully for user:', decodedToken.email, 'uid:', decodedToken.uid);
 
-    // Set user info from Firebase token
-    req.user = {
-      id: parseInt(decodedToken.uid) || 0,
-      username: decodedToken.email || '',
-      password: '', // Not used for Firebase auth
-      role: 'player',
-      fullName: decodedToken.name || '',
-      email: decodedToken.email || '',
-      rating: 1500,
-      createdAt: new Date()
-    };
-    console.log('User object set from Firebase token:', { 
+    // Check if user exists in our database
+    let user = await storage.getUserByEmail(decodedToken.email || '');
+
+    // If user doesn't exist, create a new one
+    if (!user) {
+      console.log('Creating new user from Google sign-in:', decodedToken.email);
+      user = await storage.createUser({
+        username: decodedToken.email || '',
+        email: decodedToken.email || '',
+        fullName: decodedToken.name || '',
+        password: '', // Not used for Google auth
+        role: 'player',
+        rating: 1500,
+        createdAt: new Date()
+      });
+      console.log('New user created:', user.email);
+    }
+
+    // Set user info from database
+    req.user = user;
+    console.log('User object set:', { 
       email: req.user.email, 
       role: req.user.role 
     });
@@ -134,6 +143,30 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(verifyFirebaseToken);
+
+  // Traditional login route
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      const user = await storage.getUserByUsername(username);
+
+      if (!user || !(await comparePasswords(password, user.password))) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        const { password, ...safeUser } = user;
+        res.json(safeUser);
+      });
+    } catch (error) {
+      console.error('Login route error:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   app.get("/api/user", (req, res) => {
     if (!req.user) {
