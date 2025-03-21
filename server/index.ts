@@ -15,24 +15,24 @@ app.use((req, res, next) => {
     ? [
         // Development CSP - more permissive for Vite, HMR, etc.
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.stripe.com https://apis.google.com https://accounts.google.com https://*.gstatic.com https://*.googleusercontent.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.firebaseapp.com https://*.firebase.com https://*.googleapis.com https://*.gstatic.com https://*.google.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.gstatic.com",
-        "connect-src 'self' ws: wss: https://*.stripe.com https://accounts.google.com https://*.googleapis.com",
+        "connect-src 'self' ws: wss: https://*.firebaseapp.com https://*.firebase.com https://*.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com",
         "img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com",
         "font-src 'self' data: https://fonts.gstatic.com",
-        "frame-src 'self' https://*.stripe.com https://accounts.google.com",
+        "frame-src 'self' https://*.firebaseapp.com https://*.firebase.com https://*.google.com",
         "worker-src 'self' blob:",
         "base-uri 'self'",
       ]
     : [
         // Production CSP - more restrictive
         "default-src 'self'",
-        "script-src 'self' https://*.stripe.com https://apis.google.com https://accounts.google.com https://*.gstatic.com",
+        "script-src 'self' https://*.firebaseapp.com https://*.firebase.com https://*.googleapis.com https://*.gstatic.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "connect-src 'self' ws: wss: https://*.stripe.com https://accounts.google.com https://*.googleapis.com",
+        "connect-src 'self' ws: wss: https://*.firebaseapp.com https://*.firebase.com https://*.googleapis.com https://www.googleapis.com https://securetoken.googleapis.com",
         "img-src 'self' data: https://*.googleusercontent.com",
         "font-src 'self' https://fonts.gstatic.com",
-        "frame-src 'self' https://*.stripe.com https://accounts.google.com",
+        "frame-src 'self' https://*.firebaseapp.com https://*.firebase.com https://*.google.com",
         "base-uri 'self'",
       ];
 
@@ -45,7 +45,7 @@ app.use((req, res, next) => {
   const origin = req.headers.origin || "*";
   res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   next();
 });
@@ -83,8 +83,9 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Initialize WebSocket service
-  initializeWebSocket(server);
+  // Initialize WebSocket service with explicit port
+  const wsPort = 5001;
+  initializeWebSocket(server, wsPort);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
