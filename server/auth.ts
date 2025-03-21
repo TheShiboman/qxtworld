@@ -40,10 +40,14 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Update the verifyFirebaseToken middleware with more detailed logging
+// Update the verifyFirebaseToken middleware with better error handling
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  console.log('Verifying Firebase token, auth header present:', !!authHeader);
+  console.log('Token verification attempt:', {
+    hasAuthHeader: !!authHeader,
+    headerType: authHeader?.split(' ')[0] || 'none',
+    tokenLength: authHeader?.split(' ')[1]?.length || 0
+  });
 
   if (!authHeader?.startsWith('Bearer ')) {
     console.log('No Bearer token found, continuing to next middleware');
@@ -88,8 +92,12 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
       role: req.user.role 
     });
     next();
-  } catch (error) {
-    console.error('Error verifying Firebase token:', error);
+  } catch (error: any) {
+    console.error('Error verifying Firebase token:', {
+      code: error.code,
+      message: error.message,
+      errorObject: JSON.stringify(error)
+    });
     if (error.code === 'auth/id-token-expired') {
       console.log('Token expired, client should refresh');
     } else if (error.code === 'auth/invalid-credential') {
