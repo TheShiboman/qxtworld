@@ -20,7 +20,7 @@ googleProvider.setCustomParameters({
 console.log('Google Auth Provider initialized with scopes:', 
   googleProvider.getScopes(),
   'and custom parameters:', 
-  { prompt: googleProvider.getCustomParameters().get('prompt') }
+  { prompt: 'select_account' }
 );
 
 export default app;
