@@ -65,21 +65,12 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
 
     // Add error handling for Firebase Admin initialization
     if (!admin.apps.length) {
-      console.error('Firebase Admin not initialized, attempting initialization...');
-      try {
-        admin.initializeApp({
-          projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-          credential: admin.credential.applicationDefault()
-        });
-        console.log('Firebase Admin initialized successfully');
-      } catch (initError) {
-        console.error('Firebase Admin initialization error:', initError);
-        return res.status(500).json({ message: 'Authentication service unavailable' });
-      }
+      console.error('Firebase Admin not initialized');
+      return res.status(500).json({ message: 'Authentication service unavailable' });
     }
 
     const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log('Token verified successfully for user:', decodedToken.email, 'uid:', decodedToken.uid);
+    console.log('Token verified successfully for user:', decodedToken.email);
 
     // Check if user exists in our database
     let user = await storage.getUserByEmail(decodedToken.email || '');
@@ -87,15 +78,20 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
     // If user doesn't exist, create a new one
     if (!user) {
       console.log('Creating new user from Google sign-in:', decodedToken.email);
-      user = await storage.createUser({
-        username: decodedToken.email || '',
-        email: decodedToken.email || '',
-        fullName: decodedToken.name || '',
-        password: '', // Not used for Google auth
-        role: 'player',
-        createdAt: new Date()
-      });
-      console.log('New user created:', user.email);
+      try {
+        user = await storage.createUser({
+          username: decodedToken.email || '',
+          email: decodedToken.email || '',
+          fullName: decodedToken.name || '',
+          password: '', // Not used for Google auth
+          role: 'player',
+          rating: 1500
+        });
+        console.log('New user created successfully:', user.email);
+      } catch (createError) {
+        console.error('Error creating new user:', createError);
+        return res.status(500).json({ message: 'Failed to create user account' });
+      }
     }
 
     // Set user info from database
@@ -190,7 +186,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Add back the registration endpoint after the login route
+  // Registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
       console.log('Traditional registration attempt for username:', req.body.username);
@@ -213,7 +209,8 @@ export function setupAuth(app: Express) {
       const user = await storage.createUser({
         ...req.body,
         password: hashedPassword,
-        role: 'player'
+        role: 'player',
+        rating: 1500
       });
 
       console.log('User registered successfully:', user.email);
