@@ -17,149 +17,107 @@ export function useFirebaseAuth() {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
-  // Handle token refresh and query invalidation
-  const refreshTokenAndInvalidateQueries = async (user: FirebaseUser) => {
-    try {
-      console.log('Refreshing token for user:', user.email);
-      const token = await user.getIdToken(true);
-      console.log('Token refreshed successfully, length:', token.length);
-
-      // Update auth header for all future requests
-      queryClient.setDefaultOptions({
-        queries: {
-          queryFn: async ({ queryKey }) => {
-            const headers: HeadersInit = {
-              'Authorization': `Bearer ${token}`
-            };
-            const response = await fetch(queryKey[0] as string, { headers });
-            if (!response.ok) throw new Error(await response.text());
-            return response.json();
-          }
-        }
-      });
-
-      // Invalidate all queries to refetch with new token
-      await queryClient.invalidateQueries();
-      return token;
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      toast({
-        title: "Authentication Error",
-        description: "Failed to refresh authentication. Please sign in again.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+    console.log('Setting up Firebase auth listeners');
 
-    // Handle redirect result when component mounts
-    const handleRedirectResult = async () => {
+    // Handle the redirect result immediately
+    const handleRedirect = async () => {
       try {
         const result = await getRedirectResult(auth);
-        if (result) {
-          console.log('Google sign-in successful, user:', result.user.email);
+        if (result?.user) {
+          console.log('Google sign-in successful:', result.user.email);
+          const token = await result.user.getIdToken();
+          console.log('Got ID token, length:', token.length);
+
+          // Update auth header for future requests
+          queryClient.setDefaultOptions({
+            queries: {
+              queryFn: async ({ queryKey }) => {
+                const response = await fetch(queryKey[0] as string, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(await response.text());
+                return response.json();
+              }
+            }
+          });
+
           setUser(result.user);
-          await refreshTokenAndInvalidateQueries(result.user);
           toast({
             title: "Success",
             description: "Successfully signed in with Google",
           });
         }
-      } catch (error: any) {
-        setError(error);
-        console.error("Redirect sign-in error:", {
-          code: error.code,
-          message: error.message,
-          details: error.customData
-        });
+      } catch (error) {
+        console.error('Redirect sign-in error:', error);
         toast({
-          title: "Error",
-          description: "Failed to sign in with Google. Please try again.",
+          title: "Sign In Error",
+          description: "Failed to complete Google sign-in. Please try again.",
           variant: "destructive",
         });
       }
     };
 
-    // Handle initial redirect result
-    handleRedirectResult();
-
-    // Set up auth state listener
-    unsubscribe = onAuthStateChanged(
-      auth,
-      async (user) => {
-        console.log("Auth state changed:", user?.email);
-        setUser(user);
-        setLoading(false);
-
-        if (user) {
-          try {
-            await refreshTokenAndInvalidateQueries(user);
-          } catch (error) {
-            console.error('Failed to refresh token on auth state change:', error);
-            // Force re-login on token refresh failure
-            signOutUser();
-          }
-        } else {
-          // Clear all queries when user logs out
-          queryClient.clear();
+    // Handle auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user?.email);
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          queryClient.setDefaultOptions({
+            queries: {
+              queryFn: async ({ queryKey }) => {
+                const response = await fetch(queryKey[0] as string, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(await response.text());
+                return response.json();
+              }
+            }
+          });
+        } catch (error) {
+          console.error('Token refresh error:', error);
+          // Force re-login on token error
+          await signOut(auth);
         }
-      },
-      (error) => {
-        console.error("Auth state change error:", error);
-        setError(error);
-        setLoading(false);
-        toast({
-          title: "Authentication Error",
-          description: "There was a problem with authentication. Please try again.",
-          variant: "destructive",
-        });
       }
-    );
+      setUser(user);
+      setLoading(false);
+    });
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    handleRedirect();
+    return () => unsubscribe();
   }, [toast]);
 
   const signInWithGoogle = async () => {
     try {
-      setError(null);
-      console.log('Initiating Google sign-in...');
+      console.log('Starting Google sign-in process');
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
-      setError(error as Error);
-      console.error("Sign in error:", error);
+      console.error('Sign in error:', error);
       toast({
-        title: "Sign In Error",
+        title: "Error",
         description: "Failed to start Google sign-in. Please try again.",
         variant: "destructive",
       });
-      throw error;
     }
   };
 
   const signOutUser = async () => {
     try {
       await signOut(auth);
-      setUser(null);
-      queryClient.clear(); // Clear all queries on sign out
-      console.log('User signed out successfully');
+      queryClient.clear();
       toast({
         title: "Signed Out",
-        description: "You have been successfully signed out.",
+        description: "Successfully signed out",
       });
     } catch (error) {
-      setError(error as Error);
-      console.error("Sign out error:", error);
+      console.error('Sign out error:', error);
       toast({
-        title: "Sign Out Error",
+        title: "Error",
         description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
-      throw error;
     }
   };
 
