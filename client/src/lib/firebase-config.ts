@@ -19,6 +19,14 @@ if (!import.meta.env.VITE_FIREBASE_APP_ID) {
   throw new Error('Firebase app ID is not configured');
 }
 
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+// Log partial API key for verification (first 4 and last 4 chars)
+console.log('API Key verification:', {
+  prefix: apiKey.substring(0, 4),
+  suffix: apiKey.substring(apiKey.length - 4),
+  length: apiKey.length
+});
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
