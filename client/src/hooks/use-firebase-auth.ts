@@ -53,9 +53,12 @@ export function useFirebaseAuth() {
   };
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
     // Handle redirect result when component mounts
-    getRedirectResult(auth)
-      .then(async (result) => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
         if (result) {
           console.log('Google sign-in successful, user:', result.user.email);
           setUser(result.user);
@@ -65,8 +68,7 @@ export function useFirebaseAuth() {
             description: "Successfully signed in with Google",
           });
         }
-      })
-      .catch((error) => {
+      } catch (error: any) {
         setError(error);
         console.error("Redirect sign-in error:", {
           code: error.code,
@@ -78,10 +80,15 @@ export function useFirebaseAuth() {
           description: "Failed to sign in with Google. Please try again.",
           variant: "destructive",
         });
-      });
+      }
+    };
+
+    // Handle initial redirect result
+    handleRedirectResult();
 
     // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, 
+    unsubscribe = onAuthStateChanged(
+      auth,
       async (user) => {
         console.log("Auth state changed:", user?.email);
         setUser(user);
@@ -112,7 +119,9 @@ export function useFirebaseAuth() {
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [toast]);
 
   const signInWithGoogle = async () => {

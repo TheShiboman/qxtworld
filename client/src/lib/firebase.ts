@@ -1,24 +1,47 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-// Initialize Firebase app
+// Validate API key format (should start with 'AIza')
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const appId = import.meta.env.VITE_FIREBASE_APP_ID;
+
+if (!apiKey?.startsWith('AIza')) {
+  console.error('Firebase API key validation failed:', {
+    reason: 'Invalid format',
+    expected: 'Should start with AIza',
+    received: apiKey ? `Starts with ${apiKey.substring(0, 4)}` : 'No key provided'
+  });
+  throw new Error("Invalid Firebase API key format");
+}
+
+// Validate project configuration
+if (!projectId) {
+  console.error('Firebase configuration error: Project ID is missing');
+  throw new Error("Firebase project ID is not configured");
+}
+
+if (!appId) {
+  console.error('Firebase configuration error: App ID is missing');
+  throw new Error("Firebase app ID is not configured");
+}
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  apiKey,
+  authDomain: `${projectId}.firebaseapp.com`,
+  projectId,
+  storageBucket: `${projectId}.appspot.com`,
   messagingSenderId: "689094503093",
+  appId,
   measurementId: "G-PLY2H1V4VT"
 };
 
-// Initialize Firebase app and handle errors
 let app;
 try {
   console.log('Initializing Firebase with configuration:', {
     projectId: firebaseConfig.projectId,
     authDomain: firebaseConfig.authDomain,
-    apiKeyValid: !!firebaseConfig.apiKey
+    apiKeyValid: apiKey.startsWith('AIza')
   });
   app = initializeApp(firebaseConfig);
   console.log('Firebase app initialized successfully');
