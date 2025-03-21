@@ -12,11 +12,16 @@ import admin from "firebase-admin";
 try {
   admin.initializeApp({
     projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    credential: admin.credential.applicationDefault()
+    credential: admin.credential.cert({
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    })
   });
   console.log('Firebase Admin initialized successfully');
 } catch (error) {
   console.error('Firebase Admin initialization error:', error);
+  throw error;
 }
 
 declare global {
@@ -116,14 +121,20 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
     }
 
     // Set user info from database and create new session
-    req.login(user, (err) => {
-      if (err) {
-        console.error('Error setting user session:', err);
-        return res.status(500).json({ message: 'Failed to create session' });
-      }
-      console.log('User session created successfully for:', user.email);
-      next();
+    return new Promise((resolve, reject) => {
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Error setting user session:', err);
+          reject(err);
+          return;
+        }
+        console.log('User session created successfully for:', user.email);
+        resolve(next());
+      });
+    }).catch(error => {
+      return res.status(500).json({ message: 'Failed to create session' });
     });
+
   } catch (error: any) {
     console.error('Error verifying Firebase token:', {
       code: error.code,
