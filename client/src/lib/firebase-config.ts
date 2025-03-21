@@ -41,6 +41,12 @@ const firebaseConfig = {
 // Initialize Firebase app with detailed error handling
 let app;
 try {
+  console.log('Attempting to initialize Firebase with configuration:', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    hasApiKey: !!firebaseConfig.apiKey,
+    apiKeyLength: firebaseConfig.apiKey?.length
+  });
   app = initializeApp(firebaseConfig);
   console.log('Firebase app initialized successfully');
 } catch (error: any) {
