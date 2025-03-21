@@ -1,12 +1,12 @@
 import { initializeApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB03Hf1X3CtE80wcDZuXblrWyoql2QyG0k",
-  authDomain: "qxtworld.firebaseapp.com",
-  projectId: "qxtworld",
-  storageBucket: "qxtworld.appspot.com",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   messagingSenderId: "689094503093",
-  appId: "1:689094503093:web:603e7d2666772a8566cfc",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: "G-PLY2H1V4VT"
 };
 

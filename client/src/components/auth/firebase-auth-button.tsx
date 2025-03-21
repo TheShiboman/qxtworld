@@ -3,27 +3,23 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { signInWithRedirect } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 
 export function FirebaseAuthButton() {
-  const { signInWithGoogle } = useFirebaseAuth();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signInWithGoogle();
-      toast({
-        title: "Success",
-        description: "Successfully signed in with Google",
-      });
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to sign in with Google",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

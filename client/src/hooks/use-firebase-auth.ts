@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { 
-  signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   signOut, 
   onAuthStateChanged,
   type User as FirebaseUser 
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-
-const googleProvider = new GoogleAuthProvider();
+import { auth, googleProvider } from '@/lib/firebase';
 
 export function useFirebaseAuth() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -16,6 +15,19 @@ export function useFirebaseAuth() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // Handle redirect result when component mounts
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // The signed-in user info is in result.user
+          setUser(result.user);
+        }
+      })
+      .catch((error) => {
+        setError(error);
+        console.error("Redirect sign-in error:", error);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, 
       (user) => {
         setUser(user);
@@ -33,8 +45,7 @@ export function useFirebaseAuth() {
   const signInWithGoogle = async () => {
     try {
       setError(null);
-      const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       setError(error as Error);
       throw error;
