@@ -27,11 +27,11 @@ export function useFirebaseAuth() {
       // Update auth header for all future requests
       queryClient.setDefaultOptions({
         queries: {
-          queryFn: async ({ signal }) => {
+          queryFn: async ({ queryKey }) => {
             const headers: HeadersInit = {
               'Authorization': `Bearer ${token}`
             };
-            const response = await fetch(signal.url, { headers, signal });
+            const response = await fetch(queryKey[0] as string, { headers });
             if (!response.ok) throw new Error(await response.text());
             return response.json();
           }
