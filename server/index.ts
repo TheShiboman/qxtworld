@@ -15,24 +15,24 @@ app.use((req, res, next) => {
     ? [
         // Development CSP - more permissive for Vite, HMR, etc.
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.stripe.com",
-        "style-src 'self' 'unsafe-inline'",
-        "connect-src 'self' ws: wss: https://*.stripe.com",
-        "img-src 'self' data: blob:",
-        "font-src 'self' data:",
-        "frame-src 'self' https://*.stripe.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.stripe.com https://apis.google.com https://accounts.google.com https://*.gstatic.com https://*.googleusercontent.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.gstatic.com",
+        "connect-src 'self' ws: wss: https://*.stripe.com https://accounts.google.com https://*.googleapis.com",
+        "img-src 'self' data: blob: https://*.googleusercontent.com https://*.gstatic.com",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        "frame-src 'self' https://*.stripe.com https://accounts.google.com",
         "worker-src 'self' blob:",
         "base-uri 'self'",
       ]
     : [
         // Production CSP - more restrictive
         "default-src 'self'",
-        "script-src 'self' https://*.stripe.com",
-        "style-src 'self' 'unsafe-inline'",
-        "connect-src 'self' ws: wss: https://*.stripe.com",
-        "img-src 'self' data:",
-        "font-src 'self'",
-        "frame-src 'self' https://*.stripe.com",
+        "script-src 'self' https://*.stripe.com https://apis.google.com https://accounts.google.com https://*.gstatic.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "connect-src 'self' ws: wss: https://*.stripe.com https://accounts.google.com https://*.googleapis.com",
+        "img-src 'self' data: https://*.googleusercontent.com",
+        "font-src 'self' https://fonts.gstatic.com",
+        "frame-src 'self' https://*.stripe.com https://accounts.google.com",
         "base-uri 'self'",
       ];
 
