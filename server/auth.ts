@@ -1,11 +1,23 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import admin from "firebase-admin";
+
+// Initialize Firebase Admin with proper error handling
+try {
+  admin.initializeApp({
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    credential: admin.credential.applicationDefault()
+  });
+  console.log('Firebase Admin initialized successfully');
+} catch (error) {
+  console.error('Firebase Admin initialization error:', error);
+}
 
 declare global {
   namespace Express {
@@ -16,32 +28,50 @@ declare global {
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
-  try {
-    console.log("Generating salt and hashing password...");
-    const salt = randomBytes(16).toString("hex");
-    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-    const hashedPassword = `${buf.toString("hex")}.${salt}`;
-    console.log("Password hashed successfully");
-    return hashedPassword;
-  } catch (error) {
-    console.error("Error hashing password:", error);
-    throw error;
-  }
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+// Firebase token verification middleware with detailed logging
+async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  console.log('Verifying Firebase token, auth header present:', !!authHeader);
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    console.log('No Bearer token found, continuing to next middleware');
+    return next();
+  }
+
   try {
-    const [hashed, salt] = stored.split(".");
-    if (!hashed || !salt) {
-      console.error("Invalid stored password format");
-      return false;
-    }
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
+    const token = authHeader.split('Bearer ')[1];
+    console.log('Attempting to verify token');
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    console.log('Token verified successfully for user:', decodedToken.email);
+
+    // Set user info from Firebase token
+    req.user = {
+      id: parseInt(decodedToken.uid) || 0,
+      username: decodedToken.email || '',
+      password: '', // Required by type but not used for Firebase auth
+      role: 'player',
+      fullName: decodedToken.name || '',
+      email: decodedToken.email || '',
+      rating: 1500,
+      createdAt: new Date()
+    };
+    next();
   } catch (error) {
-    console.error("Error comparing passwords:", error);
-    return false;
+    console.error('Error verifying Firebase token:', error);
+    // Don't send error to client, just continue to next middleware
+    next();
   }
 }
 
@@ -63,39 +93,25 @@ export function setupAuth(app: Express) {
       path: "/",
       domain: process.env.NODE_ENV === "production" ? ".replit.app" : undefined
     },
-    name: "qxt.sid", // Custom name to avoid default 'connect.sid'
-    rolling: true, // Refresh session expiry on each request
+    name: "qxt.sid",
+    rolling: true,
   };
 
-  // Enable trust proxy if we're behind a reverse proxy (required for secure cookies)
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(verifyFirebaseToken);
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        console.log(`Attempting login for user: ${username}`);
         const user = await storage.getUserByUsername(username);
-
-        if (!user) {
-          console.log("User not found");
-          return done(null, false, { message: "Invalid username or password" });
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
         }
-
-        console.log("User found, comparing passwords");
-        const isValid = await comparePasswords(password, user.password);
-
-        if (!isValid) {
-          console.log("Password comparison failed");
-          return done(null, false, { message: "Invalid username or password" });
-        }
-
-        console.log("Login successful");
         return done(null, user);
       } catch (error) {
-        console.error("Login error:", error);
         return done(error);
       }
     })
@@ -108,101 +124,55 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      if (!user) {
-        return done(null, false);
-      }
       done(null, user);
     } catch (error) {
       done(error);
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        console.error("Authentication error:", err);
-        return next(err);
-      }
-      if (!user) {
-        console.log("Authentication failed:", info?.message);
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
-      }
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Login error:", err);
-          return next(err);
-        }
-        // Only send non-sensitive user data
-        const { password, ...safeUser } = user;
-        res.json(safeUser);
-      });
-    })(req, res, next);
+  // API routes
+  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+    res.json(req.user);
   });
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      console.log("Registration attempt for username:", req.body.username);
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        console.log("Username already exists:", req.body.username);
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      const { passwordConfirm, ...userData } = req.body;
-      console.log("Hashing password for new user");
-      const hashedPassword = await hashPassword(userData.password);
-      console.log("Creating new user with hashed password");
-
-      // Set role to admin if username contains 'admin'
-      const role = userData.username.toLowerCase().includes('admin') ? 'admin' : 'player';
-
+      const hashedPassword = await hashPassword(req.body.password);
       const user = await storage.createUser({
-        ...userData,
-        role, // Use the determined role
+        ...req.body,
         password: hashedPassword,
       });
 
       req.login(user, (err) => {
-        if (err) {
-          console.error("Login error after registration:", err);
-          return next(err);
-        }
-        // Only send non-sensitive user data
+        if (err) return next(err);
         const { password, ...safeUser } = user;
-        console.log("User registered successfully:", safeUser);
         res.status(201).json(safeUser);
       });
     } catch (error) {
-      console.error("Registration error:", error);
       next(error);
     }
   });
 
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
-      if (err) {
-        return next(err);
-      }
+      if (err) return next(err);
       req.session.destroy((err) => {
-        if (err) {
-          return next(err);
-        }
-        res.clearCookie("qxt.sid", {
-          path: "/",
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax"
-        });
+        if (err) return next(err);
+        res.clearCookie("qxt.sid");
         res.sendStatus(200);
       });
     });
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.sendStatus(401);
     }
-    // Only send non-sensitive user data
     const { password, ...safeUser } = req.user;
     res.json(safeUser);
   });

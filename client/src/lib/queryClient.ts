@@ -15,7 +15,7 @@ async function getAuthHeaders() {
   }
 
   try {
-    const token = await user.getIdToken();
+    const token = await user.getIdToken(true); // Force refresh token
     return {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
