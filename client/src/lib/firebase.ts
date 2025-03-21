@@ -1,5 +1,5 @@
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import app from "./firebase-config.js";
+import app from "./firebase-config";
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
