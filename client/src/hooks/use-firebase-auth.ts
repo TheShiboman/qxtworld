@@ -23,8 +23,23 @@ export function useFirebaseAuth() {
       console.log('Refreshing token for user:', user.email);
       const token = await user.getIdToken(true);
       console.log('Token refreshed successfully, length:', token.length);
+
+      // Update auth header for all future requests
+      queryClient.setDefaultOptions({
+        queries: {
+          queryFn: async ({ signal }) => {
+            const headers: HeadersInit = {
+              'Authorization': `Bearer ${token}`
+            };
+            const response = await fetch(signal.url, { headers, signal });
+            if (!response.ok) throw new Error(await response.text());
+            return response.json();
+          }
+        }
+      });
+
       // Invalidate all queries to refetch with new token
-      queryClient.invalidateQueries();
+      await queryClient.invalidateQueries();
       return token;
     } catch (error) {
       console.error('Token refresh error:', error);
@@ -40,22 +55,24 @@ export function useFirebaseAuth() {
   useEffect(() => {
     // Handle redirect result when component mounts
     getRedirectResult(auth)
-      .then((result) => {
+      .then(async (result) => {
         if (result) {
           console.log('Google sign-in successful, user:', result.user.email);
           setUser(result.user);
-          return refreshTokenAndInvalidateQueries(result.user)
-            .then(() => {
-              toast({
-                title: "Success",
-                description: "Successfully signed in with Google",
-              });
-            });
+          await refreshTokenAndInvalidateQueries(result.user);
+          toast({
+            title: "Success",
+            description: "Successfully signed in with Google",
+          });
         }
       })
       .catch((error) => {
         setError(error);
-        console.error("Redirect sign-in error:", error);
+        console.error("Redirect sign-in error:", {
+          code: error.code,
+          message: error.message,
+          details: error.customData
+        });
         toast({
           title: "Error",
           description: "Failed to sign in with Google. Please try again.",
@@ -78,6 +95,9 @@ export function useFirebaseAuth() {
             // Force re-login on token refresh failure
             signOutUser();
           }
+        } else {
+          // Clear all queries when user logs out
+          queryClient.clear();
         }
       },
       (error) => {

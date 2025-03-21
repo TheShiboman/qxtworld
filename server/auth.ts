@@ -122,9 +122,8 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
         return res.status(500).json({ message: 'Failed to create session' });
       }
       console.log('User session created successfully for:', user.email);
+      next();
     });
-
-    next();
   } catch (error: any) {
     console.error('Error verifying Firebase token:', {
       code: error.code,
