@@ -13,13 +13,31 @@ export function FirebaseAuthButton() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
+      console.log('Starting Google sign-in process...');
       await signInWithRedirect(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Google sign-in error:', {
+        code: error.code,
+        message: error.message,
+        // Log additional error details if available
+        details: error.customData ? JSON.stringify(error.customData) : 'No additional details'
+      });
+
+      let errorMessage = 'Failed to sign in with Google. ';
+      if (error.code === 'auth/invalid-api-key') {
+        errorMessage += 'Invalid API configuration. Please contact support.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage += 'Google sign-in is not enabled for this application.';
+      } else {
+        errorMessage += 'Please try again.';
+      }
+
       toast({
-        title: "Error",
-        description: "Failed to sign in with Google",
+        title: "Authentication Error",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
