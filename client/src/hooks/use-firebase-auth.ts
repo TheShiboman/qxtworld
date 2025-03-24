@@ -199,22 +199,26 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
+      console.log('Starting sign out process...');
       setAuthState("loading");
       setLoading(true);
 
       // Clear backend session first
-      await fetch('/api/logout', {
+      const logoutResponse = await fetch('/api/logout', {
         method: 'POST',
         credentials: 'include'
       });
 
+      if (!logoutResponse.ok) {
+        throw new Error('Failed to clear backend session');
+      }
+
       // Then sign out from Firebase
       await signOut(auth);
+      console.log('Firebase sign out completed');
 
-      // Clear React Query cache
-      queryClient.setQueryData(['/api/user'], null);
-
-      // Reset all states
+      // Clear React Query cache and reset states
+      queryClient.clear(); // Clear all queries
       setUser(null);
       setAuthState("idle");
       setLoading(false);
