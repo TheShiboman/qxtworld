@@ -26,7 +26,8 @@ const firebaseConfig = {
 
 console.log('Initializing Firebase with:', {
   projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain
+  authDomain: firebaseConfig.authDomain,
+  currentOrigin: window.location.origin // Log current origin for debugging
 });
 
 const app = initializeApp(firebaseConfig);
