@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { signInWithRedirect } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { signInWithRedirect } from "firebase/auth";
 
 export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,20 +30,7 @@ export function FirebaseAuthButton() {
   const handleSignOut = async () => {
     try {
       setIsLoading(true);
-      // First, revoke access token
-      if (auth.currentUser) {
-        await auth.currentUser.getIdToken(true);
-      }
-
-      // Clear all storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Sign out from Firebase
       await signOut();
-
-      // Force navigation to auth page
-      window.location.replace('/auth');
     } catch (error) {
       console.error('Sign out error:', error);
       toast({
