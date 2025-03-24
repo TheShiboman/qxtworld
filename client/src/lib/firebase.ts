@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from "firebase/auth";
 
 // Required Firebase configuration values
 const requiredEnvVars = {
@@ -31,10 +31,20 @@ console.log('Initializing Firebase with:', {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Set persistence to LOCAL to handle mobile browser sessions better
+setPersistence(auth, browserLocalPersistence)
+  .then(() => console.log('Firebase persistence set to LOCAL'))
+  .catch((error) => console.error('Error setting persistence:', error));
+
 export const googleProvider = new GoogleAuthProvider();
 
 // Configure Google Auth Provider
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
+googleProvider.setCustomParameters({
+  // Force account selection to prevent session issues
+  prompt: 'select_account'
+});
 
 export default app;
