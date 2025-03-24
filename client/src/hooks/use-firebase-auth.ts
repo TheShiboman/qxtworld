@@ -11,6 +11,7 @@ import {
 import { auth, googleProvider } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import type { LoadingState } from '@/components/ui/loading-indicator';
 
 // Helper to detect mobile browsers
 const isMobile = () => {
@@ -23,12 +24,14 @@ export function useFirebaseAuth() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [authState, setAuthState] = useState<LoadingState>("idle");
   const { toast } = useToast();
 
   // Function to sync Firebase auth state with backend
   const syncAuthState = async (firebaseUser: FirebaseUser | null) => {
     try {
       if (firebaseUser) {
+        setAuthState("loading");
         // Get fresh token
         const token = await firebaseUser.getIdToken(true);
         console.log('Got fresh token, length:', token.length);
@@ -43,20 +46,23 @@ export function useFirebaseAuth() {
         });
 
         if (!response.ok) {
+          setAuthState("error");
           throw new Error('Failed to sync auth state with backend');
         }
 
         // Update React Query cache with user data
         const userData = await response.json();
         queryClient.setQueryData(['/api/user'], userData);
-
+        setAuthState("success");
         console.log('Successfully synced auth state with backend');
       } else {
         // Clear React Query cache when user signs out
         queryClient.setQueryData(['/api/user'], null);
+        setAuthState("idle");
       }
     } catch (error) {
       console.error('Error syncing auth state:', error);
+      setAuthState("error");
     }
   };
 
@@ -67,6 +73,7 @@ export function useFirebaseAuth() {
     const handleRedirectResult = async () => {
       try {
         console.log('Checking for redirect result...');
+        setAuthState("loading");
         const result = await getRedirectResult(auth);
 
         if (result?.user) {
@@ -95,14 +102,17 @@ export function useFirebaseAuth() {
             return;
           } catch (retryError) {
             console.error('Retry sign-in failed:', retryError);
+            setAuthState("error");
           }
         }
 
         if (error.code === 'auth/popup-closed-by-user' || 
             error.code === 'auth/cancelled-popup-request') {
+          setAuthState("idle");
           return;
         }
 
+        setAuthState("error");
         toast({
           title: "Sign In Error",
           description: "Failed to complete Google sign-in. Please try again.",
@@ -121,6 +131,7 @@ export function useFirebaseAuth() {
       console.error('Auth state change error:', error);
       setError(error);
       setLoading(false);
+      setAuthState("error");
     });
 
     // Check for redirect result
@@ -138,6 +149,7 @@ export function useFirebaseAuth() {
         customParams: googleProvider.getCustomParameters()
       });
       setError(null);
+      setAuthState("loading");
 
       const mobile = isMobile();
       console.log('Device detection:', { isMobile: mobile });
@@ -171,11 +183,14 @@ export function useFirebaseAuth() {
 
       if (error.code !== 'auth/popup-closed-by-user' && 
           error.code !== 'auth/cancelled-popup-request') {
+        setAuthState("error");
         toast({
           title: "Sign In Error",
           description: errorMessage,
           variant: "destructive",
         });
+      } else {
+        setAuthState("idle");
       }
 
       setError(error);
@@ -184,6 +199,7 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
+      setAuthState("loading");
       await signOut(auth);
       await syncAuthState(null);
       toast({
@@ -192,6 +208,7 @@ export function useFirebaseAuth() {
       });
     } catch (error: any) {
       console.error('Sign out error:', error);
+      setAuthState("error");
       toast({
         title: "Error",
         description: "Failed to sign out. Please try again.",
@@ -205,6 +222,7 @@ export function useFirebaseAuth() {
     user,
     loading,
     error,
+    authState,
     signInWithGoogle,
     signOut: signOutUser
   };
