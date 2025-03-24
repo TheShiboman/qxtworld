@@ -1,35 +1,43 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-// Firebase configuration with complete OAuth settings
-const firebaseConfig = {
-  apiKey: "AIzaSyB03Hf1X3CtE80wcDZuXblrWyoql2QyG0k",
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+// Required Firebase configuration values
+const requiredEnvVars = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  messagingSenderId: "689094503093",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: "G-PLY2H1V4VT"
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-console.log('Attempting Firebase initialization with:', {
+// Validate all required environment variables are present
+Object.entries(requiredEnvVars).forEach(([key, value]) => {
+  if (!value) {
+    throw new Error(`Missing required Firebase configuration: ${key}`);
+  }
+});
+
+const firebaseConfig = {
+  apiKey: requiredEnvVars.apiKey,
+  authDomain: `${requiredEnvVars.projectId}.firebaseapp.com`,
+  projectId: requiredEnvVars.projectId,
+  storageBucket: `${requiredEnvVars.projectId}.appspot.com`,
+  messagingSenderId: "689094503093",
+  appId: requiredEnvVars.appId
+};
+
+console.log('Initializing Firebase with:', {
   projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  hasApiKey: !!firebaseConfig.apiKey
+  authDomain: firebaseConfig.authDomain
 });
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-
-// Initialize Google Auth Provider with complete configuration
 export const googleProvider = new GoogleAuthProvider();
-googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
-googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 
-// Force account selection to ensure proper OAuth flow
+// Configure Google Auth Provider
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
 googleProvider.setCustomParameters({
-  prompt: 'select_account',
-  access_type: 'offline'
+  prompt: 'select_account'
 });
 
 export default app;
