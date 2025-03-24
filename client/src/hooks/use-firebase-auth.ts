@@ -23,20 +23,20 @@ export function useFirebaseAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set Firebase persistence to session only
-    setPersistence(auth, browserSessionPersistence);
+    // Set Firebase persistence to local
+    setPersistence(auth, browserLocalPersistence);
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
         if (user) {
-          setAuthState("success");
           setUser(user);
+          setAuthState("success");
         } else {
-          setUser(null);
-          setAuthState("idle");
           // Clear all client state on auth state change to null
           queryClient.clear();
           queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+          setUser(null);
+          setAuthState("idle");
         }
       } catch (error) {
         console.error('Auth state change error:', error);
@@ -52,11 +52,13 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
+      // Start logout process
       setAuthState("loading");
 
-      // Revoke token if possible
+      // Revoke Firebase token
       if (auth.currentUser) {
         try {
+          // Force token refresh to invalidate existing token
           await auth.currentUser.getIdToken(true);
         } catch (e) {
           console.error('Token revocation failed:', e);
@@ -65,7 +67,6 @@ export function useFirebaseAuth() {
 
       // Clear all client state
       queryClient.clear();
-      queryClient.setQueryData(['/api/user'], null);
       localStorage.clear();
       sessionStorage.clear();
 
@@ -77,19 +78,24 @@ export function useFirebaseAuth() {
       });
 
       // Sign out from Firebase
-      await auth.signOut();
+      await signOut(auth);
 
       // Reset state
       setUser(null);
       setAuthState("idle");
       setLoading(false);
 
-      // Hard redirect to auth page
+      // Force a complete page reload and redirect
       window.location.replace('/auth');
 
     } catch (error: any) {
       console.error('Sign out error:', error);
-      throw error;
+      setAuthState("error");
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

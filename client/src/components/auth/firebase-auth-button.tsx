@@ -1,20 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { auth, googleProvider } from "@/lib/firebase";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { signInWithRedirect } from "firebase/auth";
 
 export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const { authState, signOut } = useFirebaseAuth();
+  const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithGoogle();
     } catch (error: any) {
       console.error('Google Sign-in Error:', error);
       toast({
