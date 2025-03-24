@@ -35,30 +35,28 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // Immediately clear all local state
+      // First sign out from Firebase
+      await signOut(auth);
+
+      // Then clear backend session
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to clear backend session');
+      }
+
+      // Clear all client state
       queryClient.clear();
-      queryClient.setQueryData(['/api/user'], null);
       setUser(null);
       setAuthState("idle");
       setLoading(false);
 
-      // Force a navigation to /auth
-      window.location.assign('/auth');
+      // Force a full page reload to /auth
+      window.location.replace('/auth');
 
-      // After navigation is triggered, cleanup Firebase and backend
-      try {
-        // Clear Firebase auth
-        await signOut(auth);
-
-        // Clear backend session
-        await fetch('/api/logout', {
-          method: 'POST',
-          credentials: 'include'
-        });
-      } catch (error) {
-        console.error('Cleanup error:', error);
-        // We don't need to handle this error since we're already navigating away
-      }
     } catch (error: any) {
       console.error('Sign out error:', error);
       toast({
