@@ -8,48 +8,47 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 
 export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const { authState } = useFirebaseAuth();
+  const { authState, signOut } = useFirebaseAuth();
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      console.log('Attempting Google sign-in...');
-
-      // Log Firebase configuration status
-      console.log('Firebase Configuration Check:', {
-        authInitialized: !!auth,
-        providerScopes: googleProvider.getScopes(),
-        customParams: googleProvider.getCustomParameters()
-      });
-
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
-      console.error('Google Sign-in Error Details:', {
-        code: error.code,
-        message: error.message,
-        customData: error.customData ? JSON.stringify(error.customData) : 'No additional details',
-        stack: error.stack
-      });
-
-      let errorMessage = 'Failed to sign in with Google. ';
-
-      // Specific error handling for API key issues
-      if (error.code === 'auth/invalid-api-key') {
-        console.error('Invalid API Key Error:', {
-          message: 'Firebase API key validation failed',
-          suggestion: 'Check Firebase Console for correct Web API Key'
-        });
-        errorMessage += 'Authentication configuration error. Please contact support.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage += 'Google sign-in is not enabled for this application.';
-      } else {
-        errorMessage += error.message || 'Please try again.';
-      }
-
+      console.error('Google Sign-in Error:', error);
       toast({
         title: "Authentication Error",
-        description: errorMessage,
+        description: "Failed to sign in with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      setIsLoading(true);
+      // First, revoke access token
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true);
+      }
+
+      // Clear all storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Sign out from Firebase
+      await signOut();
+
+      // Force navigation to auth page
+      window.location.replace('/auth');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -61,7 +60,7 @@ export function FirebaseAuthButton() {
     <div className="relative">
       <Button
         variant="outline"
-        onClick={handleGoogleSignIn}
+        onClick={authState === "success" ? handleSignOut : handleGoogleSignIn}
         disabled={isLoading || authState === "loading"}
         className="w-full"
       >
@@ -85,7 +84,7 @@ export function FirebaseAuthButton() {
             />
           </svg>
         )}
-        Sign in with Google
+        {authState === "success" ? "Sign out" : "Sign in with Google"}
       </Button>
 
       {authState !== "idle" && (
@@ -93,7 +92,7 @@ export function FirebaseAuthButton() {
           <LoadingIndicator 
             state={authState}
             message={
-              authState === "loading" ? "Authenticating with Google..." :
+              authState === "loading" ? "Processing authentication..." :
               authState === "success" ? "Successfully authenticated!" :
               authState === "error" ? "Authentication failed" :
               undefined

@@ -20,14 +20,43 @@ export function useFirebaseAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    }, (error) => {
-      console.error('Auth state change error:', error);
-      setError(error);
-      setLoading(false);
-      setAuthState("error");
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      try {
+        setLoading(true);
+        if (user) {
+          // Get fresh token on auth state change
+          const token = await user.getIdToken(true);
+
+          // Sync with backend
+          const response = await fetch('/api/user', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to sync with backend');
+          }
+
+          setUser(user);
+          setAuthState("success");
+        } else {
+          // Clear all client state on auth state change to null
+          queryClient.clear();
+          localStorage.clear();
+          sessionStorage.clear();
+          setUser(null);
+          setAuthState("idle");
+        }
+      } catch (error) {
+        console.error('Auth state change error:', error);
+        setError(error as Error);
+        setAuthState("error");
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
@@ -37,43 +66,27 @@ export function useFirebaseAuth() {
     try {
       setAuthState("loading");
 
-      // Clear all browser storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Revoke Firebase token and sign out
-      if (auth.currentUser) {
-        await auth.currentUser.getIdToken(true);
-        await signOut(auth);
-      }
-
-      // Clear backend session
+      // Clear backend session first
       await fetch('/api/logout', {
         method: 'POST',
         credentials: 'include',
         cache: 'no-store'
       });
 
-      // Clear all client state
+      // Clear all storage and state
+      localStorage.clear();
+      sessionStorage.clear();
       queryClient.clear();
-      queryClient.removeQueries();
 
-      // Reset local state
-      setUser(null);
-      setAuthState("idle");
-      setLoading(false);
-      setError(null);
+      // Sign out from Firebase last
+      await signOut(auth);
 
-      // Force a hard reload to /auth
-      window.location.href = '/auth';
-
+      // Redirect to auth page
+      window.location.replace('/auth');
     } catch (error: any) {
       console.error('Sign out error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
+      setAuthState("error");
+      throw error; // Let the component handle the error
     }
   };
 
