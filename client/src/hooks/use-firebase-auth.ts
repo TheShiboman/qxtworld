@@ -65,6 +65,12 @@ export function useFirebaseAuth() {
           return;
         }
 
+        // Don't show error for user cancellation
+        if (error.code === 'auth/popup-closed-by-user' || 
+            error.code === 'auth/cancelled-popup-request') {
+          return;
+        }
+
         toast({
           title: "Sign In Error",
           description: "Failed to complete Google sign-in. Please try again.",

@@ -35,7 +35,13 @@ export const auth = getAuth(app);
 // Set persistence to LOCAL to handle mobile browser sessions better
 setPersistence(auth, browserLocalPersistence)
   .then(() => console.log('Firebase persistence set to LOCAL'))
-  .catch((error) => console.error('Error setting persistence:', error));
+  .catch((error) => {
+    console.error('Error setting persistence:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
+  });
 
 export const googleProvider = new GoogleAuthProvider();
 
@@ -43,7 +49,7 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
 googleProvider.setCustomParameters({
-  // Force account selection to prevent session issues
+  // Force account selection to prevent session issues and handle redirects better
   prompt: 'select_account'
 });
 
