@@ -26,9 +26,9 @@ export default function AuthPage() {
     );
   }
 
-  // If authenticated, redirect to dashboard
+  // If authenticated, redirect to dashboard immediately
   if (user) {
-    setLocation("/dashboard");
+    window.location.href = '/dashboard';
     return null;
   }
 

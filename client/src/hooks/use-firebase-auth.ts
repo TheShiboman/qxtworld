@@ -35,27 +35,37 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // First sign out from Firebase
-      await signOut(auth);
+      setAuthState("loading");
 
-      // Then clear backend session
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
+      // Clear all browser storage
+      localStorage.clear();
+      sessionStorage.clear();
 
-      if (!response.ok) {
-        throw new Error('Failed to clear backend session');
+      // Revoke Firebase token and sign out
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true);
+        await signOut(auth);
       }
+
+      // Clear backend session
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store'
+      });
 
       // Clear all client state
       queryClient.clear();
+      queryClient.removeQueries();
+
+      // Reset local state
       setUser(null);
       setAuthState("idle");
       setLoading(false);
+      setError(null);
 
-      // Force a full page reload to /auth
-      window.location.replace('/auth');
+      // Force a hard reload to /auth
+      window.location.href = '/auth';
 
     } catch (error: any) {
       console.error('Sign out error:', error);
