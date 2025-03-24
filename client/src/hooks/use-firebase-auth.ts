@@ -19,10 +19,8 @@ export function useFirebaseAuth() {
   const [authState, setAuthState] = useState<LoadingState>("idle");
   const { toast } = useToast();
 
-  // Handle Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user?.email);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     }, (error) => {
@@ -37,32 +35,32 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      console.log('Starting sign out process...');
-      setAuthState("loading");
-
-      // Clear Firebase auth first
-      await signOut(auth);
-      console.log('Firebase sign out completed');
-
-      // Clear backend session
-      const logoutResponse = await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      if (!logoutResponse.ok) {
-        throw new Error('Failed to clear backend session');
-      }
-
-      // Clear all client-side state
+      // Immediately clear all local state
       queryClient.clear();
-      await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.setQueryData(['/api/user'], null);
+      setUser(null);
+      setAuthState("idle");
+      setLoading(false);
 
-      // Force a complete page reload to clear all state
+      // Force a navigation to /auth
       window.location.assign('/auth');
+
+      // After navigation is triggered, cleanup Firebase and backend
+      try {
+        // Clear Firebase auth
+        await signOut(auth);
+
+        // Clear backend session
+        await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+      } catch (error) {
+        console.error('Cleanup error:', error);
+        // We don't need to handle this error since we're already navigating away
+      }
     } catch (error: any) {
       console.error('Sign out error:', error);
-      setAuthState("error");
       toast({
         title: "Error",
         description: "Failed to sign out. Please try again.",

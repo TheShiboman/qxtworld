@@ -17,13 +17,6 @@ export default function AuthPage() {
   const { user, isLoading, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Only redirect if we have a confirmed authenticated user
-  useEffect(() => {
-    if (user && !isLoading) {
-      setLocation("/dashboard");
-    }
-  }, [user, isLoading, setLocation]);
-
   // Show loading state while authentication status is being determined
   if (isLoading) {
     return (
@@ -33,7 +26,12 @@ export default function AuthPage() {
     );
   }
 
-  // Show the auth form if we're not authenticated
+  // If authenticated, redirect to dashboard
+  if (user) {
+    setLocation("/dashboard");
+    return null;
+  }
+
   const loginForm = useForm({
     defaultValues: {
       username: "",
