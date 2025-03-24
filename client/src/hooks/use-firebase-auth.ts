@@ -200,8 +200,21 @@ export function useFirebaseAuth() {
   const signOutUser = async () => {
     try {
       setAuthState("loading");
+
+      // Clear backend session first
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      // Then sign out from Firebase
       await signOut(auth);
-      await syncAuthState(null);
+
+      // Clear React Query cache
+      queryClient.setQueryData(['/api/user'], null);
+
+      setAuthState("idle");
+
       toast({
         title: "Signed Out",
         description: "Successfully signed out",
