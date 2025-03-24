@@ -29,6 +29,7 @@ export function useFirebaseAuth() {
       if (firebaseUser) {
         // Get fresh token
         const token = await firebaseUser.getIdToken(true);
+        console.log('Got fresh token, syncing with backend...');
 
         // Make API request to verify token and create session
         const response = await fetch('/api/user', {
@@ -97,7 +98,6 @@ export function useFirebaseAuth() {
           customData: error.customData
         });
 
-        // Don't show error for user cancellation
         if (error.code === 'auth/popup-closed-by-user' || 
             error.code === 'auth/cancelled-popup-request') {
           return;
