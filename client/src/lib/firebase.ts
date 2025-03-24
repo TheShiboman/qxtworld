@@ -1,27 +1,15 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-// Required Firebase configuration values
-const requiredEnvVars = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-// Validate all required environment variables are present
-Object.entries(requiredEnvVars).forEach(([key, value]) => {
-  if (!value) {
-    throw new Error(`Missing required Firebase configuration: ${key}`);
-  }
-});
-
+// Firebase configuration with correct API key
 const firebaseConfig = {
-  apiKey: requiredEnvVars.apiKey,
-  authDomain: `${requiredEnvVars.projectId}.firebaseapp.com`,
-  projectId: requiredEnvVars.projectId,
-  storageBucket: `${requiredEnvVars.projectId}.appspot.com`,
+  apiKey: "AIzaSyB03Hf1X3CtE80wcDZuXblrWyoql2QyG0k",
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   messagingSenderId: "689094503093",
-  appId: requiredEnvVars.appId
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: "G-PLY2H1V4VT"
 };
 
 console.log('Initializing Firebase with:', {
