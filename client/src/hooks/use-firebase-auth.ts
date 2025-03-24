@@ -1,25 +1,3 @@
-import { useState, useEffect } from 'react';
-import { 
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider, 
-  signOut, 
-  onAuthStateChanged,
-  type User as FirebaseUser 
-} from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
-import type { LoadingState } from '@/components/ui/loading-indicator';
-
-// Helper to detect mobile browsers
-const isMobile = () => {
-  const userAgent = navigator.userAgent || navigator.vendor;
-  const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-  return mobileRegex.test(userAgent.toLowerCase());
-};
-
 export function useFirebaseAuth() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,6 +36,7 @@ export function useFirebaseAuth() {
       } else {
         // Clear React Query cache when user signs out
         queryClient.clear(); // Clear all queries
+        await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
         setAuthState("idle");
       }
     } catch (error) {
@@ -96,7 +75,6 @@ export function useFirebaseAuth() {
 
         // Mobile-specific error handling
         if (error.code === 'auth/missing-initial-state') {
-          // Retry the sign-in process
           try {
             await signInWithRedirect(auth, googleProvider);
             return;
@@ -218,9 +196,14 @@ export function useFirebaseAuth() {
 
       // Clear React Query cache and reset states
       queryClient.clear(); // Clear all queries
+      await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+
+      // Synchronously update local state
       setUser(null);
       setAuthState("idle");
       setLoading(false);
+
+      console.log('Successfully logged out');
 
       toast({
         title: "Signed Out",
