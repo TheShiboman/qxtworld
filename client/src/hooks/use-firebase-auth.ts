@@ -48,11 +48,23 @@ export function useFirebaseAuth() {
             description: "Successfully signed in with Google",
           });
         }
-      } catch (error) {
-        console.error('Redirect sign-in error:', error);
+      } catch (error: any) {
+        console.error('Google sign-in error:', {
+          code: error.code,
+          message: error.message,
+          customData: error.customData
+        });
+
+        let errorMessage = "Failed to complete Google sign-in. Please try again.";
+
+        // Handle specific Firebase configuration error
+        if (error.code === 'auth/configuration-not-found') {
+          errorMessage = "Google Sign-in is not properly configured. Please ensure your domain is authorized in Firebase Console.";
+        }
+
         toast({
           title: "Sign In Error",
-          description: "Failed to complete Google sign-in. Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -77,7 +89,6 @@ export function useFirebaseAuth() {
           });
         } catch (error) {
           console.error('Token refresh error:', error);
-          // Force re-login on token error
           await signOut(auth);
         }
       }
@@ -91,15 +102,21 @@ export function useFirebaseAuth() {
 
   const signInWithGoogle = async () => {
     try {
+      setLoading(true);
       console.log('Starting Google sign-in process');
       await signInWithRedirect(auth, googleProvider);
-    } catch (error) {
-      console.error('Sign in error:', error);
+    } catch (error: any) {
+      console.error('Sign in error:', {
+        code: error.code,
+        message: error.message
+      });
       toast({
         title: "Error",
         description: "Failed to start Google sign-in. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
