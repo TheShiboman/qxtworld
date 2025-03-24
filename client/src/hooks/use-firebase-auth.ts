@@ -80,6 +80,7 @@ export function useFirebaseAuth() {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('Attempting Google sign-in...');
       setError(null);
       if (isMobile()) {
         console.log('Starting Google sign-in with redirect (mobile)');
