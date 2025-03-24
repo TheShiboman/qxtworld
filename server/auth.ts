@@ -45,7 +45,7 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Update verifyFirebaseToken middleware with better error handling
+// Update the verifyFirebaseToken middleware
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
   // Skip Firebase verification for traditional login and registration routes
   if (req.path === '/api/login' || req.path === '/api/register') {
