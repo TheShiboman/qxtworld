@@ -13,21 +13,17 @@ import { FirebaseAuthButton } from "@/components/auth/firebase-auth-button";
 import { Input } from "@/components/ui/input";
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loading, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Redirect authenticated users immediately
+  // Only redirect if we have a confirmed authenticated user
   useEffect(() => {
-    if (user) {
+    if (user && !loading) {
       setLocation("/dashboard");
     }
-  }, [user, setLocation]);
+  }, [user, loading, setLocation]);
 
-  // If still loading or already authenticated, don't render the form
-  if (user) {
-    return null;
-  }
-
+  // Show the auth form if we're not authenticated
   const loginForm = useForm({
     defaultValues: {
       username: "",

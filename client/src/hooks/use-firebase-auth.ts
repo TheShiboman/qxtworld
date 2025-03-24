@@ -200,6 +200,7 @@ export function useFirebaseAuth() {
   const signOutUser = async () => {
     try {
       setAuthState("loading");
+      setLoading(true);
 
       // Clear backend session first
       await fetch('/api/logout', {
@@ -213,7 +214,10 @@ export function useFirebaseAuth() {
       // Clear React Query cache
       queryClient.setQueryData(['/api/user'], null);
 
+      // Reset all states
+      setUser(null);
       setAuthState("idle");
+      setLoading(false);
 
       toast({
         title: "Signed Out",
@@ -222,6 +226,7 @@ export function useFirebaseAuth() {
     } catch (error: any) {
       console.error('Sign out error:', error);
       setAuthState("error");
+      setLoading(false);
       toast({
         title: "Error",
         description: "Failed to sign out. Please try again.",
