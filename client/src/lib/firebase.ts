@@ -24,10 +24,12 @@ const firebaseConfig = {
   appId: requiredEnvVars.appId
 };
 
+// Initialize Firebase with current environment information
 console.log('Initializing Firebase with:', {
   projectId: firebaseConfig.projectId,
   authDomain: firebaseConfig.authDomain,
-  currentOrigin: window.location.origin // Log current origin for debugging
+  currentOrigin: window.location.origin, // Log current origin for debugging
+  currentHostname: window.location.hostname
 });
 
 const app = initializeApp(firebaseConfig);
@@ -50,8 +52,9 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
 googleProvider.setCustomParameters({
-  // Force account selection to prevent session issues and handle redirects better
-  prompt: 'select_account'
+  // Force account selection and allow_signup to handle new users
+  prompt: 'select_account',
+  allow_signup: 'true'
 });
 
 export default app;

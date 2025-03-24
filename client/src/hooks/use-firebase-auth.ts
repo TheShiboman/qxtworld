@@ -25,7 +25,7 @@ export function useFirebaseAuth() {
   useEffect(() => {
     console.log('Setting up Firebase auth listener');
 
-    // Set up auth state change listener first
+    // Set up auth state listener first
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log('Auth state changed:', user?.email);
       setUser(user);
@@ -57,13 +57,6 @@ export function useFirebaseAuth() {
           stack: error.stack,
           customData: error.customData
         });
-
-        // Handle specific mobile browser errors
-        if (error.message?.includes('missing initial state')) {
-          console.log('Detected missing state error, triggering new sign-in');
-          // Don't show error - we'll retry the sign-in
-          return;
-        }
 
         // Don't show error for user cancellation
         if (error.code === 'auth/popup-closed-by-user' || 
@@ -108,7 +101,7 @@ export function useFirebaseAuth() {
         stack: error.stack
       });
 
-      // Don't show error for cancelled operations
+      // Don't show error for user cancellation
       if (error.code === 'auth/cancelled-popup-request' ||
           error.code === 'auth/popup-closed-by-user') {
         return;
