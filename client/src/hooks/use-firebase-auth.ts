@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
 // Helper to detect mobile browsers
 const isMobile = () => {
@@ -22,13 +23,49 @@ export function useFirebaseAuth() {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
+  // Function to sync Firebase auth state with backend
+  const syncAuthState = async (firebaseUser: FirebaseUser | null) => {
+    try {
+      if (firebaseUser) {
+        // Get fresh token
+        const token = await firebaseUser.getIdToken(true);
+
+        // Make API request to verify token and create session
+        const response = await fetch('/api/user', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to sync auth state with backend');
+        }
+
+        // Update React Query cache with user data
+        const userData = await response.json();
+        queryClient.setQueryData(['/api/user'], userData);
+
+        console.log('Successfully synced auth state with backend');
+      } else {
+        // Clear React Query cache when user signs out
+        queryClient.setQueryData(['/api/user'], null);
+      }
+    } catch (error) {
+      console.error('Error syncing auth state:', error);
+      // Don't throw, just log the error
+    }
+  };
+
   useEffect(() => {
     console.log('Setting up Firebase auth listener');
 
-    // Set up auth state listener first
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('Auth state changed:', user?.email);
       setUser(user);
+      await syncAuthState(user);
       setLoading(false);
     }, (error) => {
       console.error('Auth state change error:', error);
@@ -45,6 +82,8 @@ export function useFirebaseAuth() {
         if (result?.user) {
           console.log('Google sign-in redirect successful:', result.user.email);
           setUser(result.user);
+          await syncAuthState(result.user);
+
           toast({
             title: "Success",
             description: "Successfully signed in with Google",
@@ -89,6 +128,7 @@ export function useFirebaseAuth() {
         console.log('Starting Google sign-in with popup (desktop)');
         const result = await signInWithPopup(auth, googleProvider);
         console.log('Google sign-in successful:', result.user.email);
+        await syncAuthState(result.user);
 
         toast({
           title: "Success",
@@ -126,6 +166,7 @@ export function useFirebaseAuth() {
   const signOutUser = async () => {
     try {
       await signOut(auth);
+      await syncAuthState(null);
       toast({
         title: "Signed Out",
         description: "Successfully signed out",
