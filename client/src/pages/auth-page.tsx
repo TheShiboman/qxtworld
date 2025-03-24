@@ -11,17 +11,27 @@ import { Trophy } from "lucide-react";
 import { useEffect } from "react";
 import { FirebaseAuthButton } from "@/components/auth/firebase-auth-button";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
-  const { user, loading, loginMutation, registerMutation } = useAuth();
+  const { user, isLoading, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
 
   // Only redirect if we have a confirmed authenticated user
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !isLoading) {
       setLocation("/dashboard");
     }
-  }, [user, loading, setLocation]);
+  }, [user, isLoading, setLocation]);
+
+  // Show loading state while authentication status is being determined
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#041d21] to-[#062128] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#c4a45b]" />
+      </div>
+    );
+  }
 
   // Show the auth form if we're not authenticated
   const loginForm = useForm({
