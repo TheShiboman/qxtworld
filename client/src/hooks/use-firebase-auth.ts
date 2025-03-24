@@ -57,7 +57,7 @@ export function useFirebaseAuth() {
         console.log('Successfully synced auth state with backend');
       } else {
         // Clear React Query cache when user signs out
-        queryClient.setQueryData(['/api/user'], null);
+        queryClient.clear(); // Clear all queries
         setAuthState("idle");
       }
     } catch (error) {
@@ -102,7 +102,6 @@ export function useFirebaseAuth() {
             return;
           } catch (retryError) {
             console.error('Retry sign-in failed:', retryError);
-            setAuthState("error");
           }
         }
 
