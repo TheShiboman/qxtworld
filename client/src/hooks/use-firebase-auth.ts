@@ -55,7 +55,19 @@ export function useFirebaseAuth() {
       // Start logout process
       setAuthState("loading");
 
-      // Revoke Firebase token
+      // Clear backend session first
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store'
+      });
+
+      // Clear all client state
+      queryClient.clear();
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Sign out from Firebase and revoke token
       if (auth.currentUser) {
         try {
           // Force token refresh to invalidate existing token
@@ -64,29 +76,16 @@ export function useFirebaseAuth() {
           console.error('Token revocation failed:', e);
         }
       }
-
-      // Clear all client state
-      queryClient.clear();
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Clear backend session
-      await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
-      });
-
-      // Sign out from Firebase
       await signOut(auth);
 
       // Reset state
       setUser(null);
       setAuthState("idle");
       setLoading(false);
+      setError(null);
 
-      // Force a complete page reload and redirect
-      window.location.replace('/auth');
+      // Force a complete page reload to clear all state
+      window.location.assign('/auth');
 
     } catch (error: any) {
       console.error('Sign out error:', error);
