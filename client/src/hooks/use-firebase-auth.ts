@@ -14,7 +14,9 @@ import { queryClient } from '@/lib/queryClient';
 
 // Helper to detect mobile browsers
 const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const userAgent = navigator.userAgent || navigator.vendor;
+  const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+  return mobileRegex.test(userAgent.toLowerCase());
 };
 
 export function useFirebaseAuth() {
@@ -29,7 +31,7 @@ export function useFirebaseAuth() {
       if (firebaseUser) {
         // Get fresh token
         const token = await firebaseUser.getIdToken(true);
-        console.log('Got fresh token, syncing with backend...');
+        console.log('Got fresh token, length:', token.length);
 
         // Make API request to verify token and create session
         const response = await fetch('/api/user', {
@@ -55,26 +57,13 @@ export function useFirebaseAuth() {
       }
     } catch (error) {
       console.error('Error syncing auth state:', error);
-      // Don't throw, just log the error
     }
   };
 
   useEffect(() => {
     console.log('Setting up Firebase auth listener');
 
-    // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user?.email);
-      setUser(user);
-      await syncAuthState(user);
-      setLoading(false);
-    }, (error) => {
-      console.error('Auth state change error:', error);
-      setError(error);
-      setLoading(false);
-    });
-
-    // Handle redirect result
+    // Handle redirect result first
     const handleRedirectResult = async () => {
       try {
         console.log('Checking for redirect result...');
@@ -98,6 +87,17 @@ export function useFirebaseAuth() {
           customData: error.customData
         });
 
+        // Mobile-specific error handling
+        if (error.code === 'auth/missing-initial-state') {
+          // Retry the sign-in process
+          try {
+            await signInWithRedirect(auth, googleProvider);
+            return;
+          } catch (retryError) {
+            console.error('Retry sign-in failed:', retryError);
+          }
+        }
+
         if (error.code === 'auth/popup-closed-by-user' || 
             error.code === 'auth/cancelled-popup-request') {
           return;
@@ -111,6 +111,18 @@ export function useFirebaseAuth() {
       }
     };
 
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user?.email);
+      setUser(user);
+      await syncAuthState(user);
+      setLoading(false);
+    }, (error) => {
+      console.error('Auth state change error:', error);
+      setError(error);
+      setLoading(false);
+    });
+
     // Check for redirect result
     handleRedirectResult();
 
@@ -120,8 +132,17 @@ export function useFirebaseAuth() {
   const signInWithGoogle = async () => {
     try {
       console.log('Attempting Google sign-in...');
+      console.log('Firebase Configuration Check:', {
+        authInitialized: !!auth,
+        providerScopes: googleProvider.getScopes(),
+        customParams: googleProvider.getCustomParameters()
+      });
       setError(null);
-      if (isMobile()) {
+
+      const mobile = isMobile();
+      console.log('Device detection:', { isMobile: mobile });
+
+      if (mobile) {
         console.log('Starting Google sign-in with redirect (mobile)');
         await signInWithRedirect(auth, googleProvider);
       } else {
@@ -142,23 +163,21 @@ export function useFirebaseAuth() {
         stack: error.stack
       });
 
-      // Don't show error for user cancellation
-      if (error.code === 'auth/cancelled-popup-request' ||
-          error.code === 'auth/popup-closed-by-user') {
-        return;
-      }
-
       let errorMessage = "Failed to sign in with Google. Please try again.";
 
       if (error.code === 'auth/popup-blocked') {
         errorMessage = "Please allow popups for authentication";
       }
 
-      toast({
-        title: "Sign In Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      if (error.code !== 'auth/popup-closed-by-user' && 
+          error.code !== 'auth/cancelled-popup-request') {
+        toast({
+          title: "Sign In Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+
       setError(error);
     }
   };
