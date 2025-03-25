@@ -26,12 +26,12 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/dashboard" component={DashboardPage} />
-      <Route path="/home" component={HomePage} />
-      <Route path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <ProtectedRoute path="/home" component={HomePage} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       <Route path="/tournaments" component={TournamentPage} />
-      <Route path="/tournaments/:id/live-scoring" component={LiveScoring} />
-      <Route path="/training" component={TrainingPage} />
+      <ProtectedRoute path="/tournaments/:id/live-scoring" component={LiveScoring} />
+      <ProtectedRoute path="/training" component={TrainingPage} />
       <Route path="/leaderboards" component={LeaderboardPage} />
       <Route path="/community" component={CommunityPage} />
       <Route path="/academy" component={AcademyPage} />
@@ -48,6 +48,7 @@ export default function App() {
       <AuthProvider>
         <div className="min-h-screen bg-background text-foreground">
           <Switch>
+            <Route path="/" />
             <Route path="/auth" />
             <Route>
               <Navbar />

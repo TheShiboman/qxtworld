@@ -27,12 +27,19 @@ export function useFirebaseAuth() {
         if (result?.user) {
           setUser(result.user);
           setAuthState("success");
+          // After successful sign-in, redirect to dashboard
+          window.location.href = '/dashboard';
         }
       })
       .catch((error) => {
         console.error('Redirect result error:', error);
         setError(error);
         setAuthState("error");
+        toast({
+          title: "Authentication Error",
+          description: "Failed to complete authentication. Please try again.",
+          variant: "destructive",
+        });
       });
 
     // Set up auth state listener
@@ -43,7 +50,7 @@ export function useFirebaseAuth() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signInWithGoogle = async () => {
     try {
@@ -69,21 +76,14 @@ export function useFirebaseAuth() {
       // Sign out from Firebase
       await signOut(auth);
 
-      // Clear backend session
-      await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-
       // Reset state
       setUser(null);
       setAuthState("idle");
       setLoading(false);
       setError(null);
 
-      // Force page reload to clear all state
-      window.location.reload();
-      window.location.href = '/auth';
+      // Redirect to landing page
+      window.location.href = '/';
 
     } catch (error) {
       console.error('Sign out error:', error);

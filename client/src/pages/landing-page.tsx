@@ -7,18 +7,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Trophy, Video, Users, ShoppingBag, Calendar } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function LandingPage() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
-
-  // Redirect authenticated users trying to access /auth to dashboard
-  if (user) {
-    setLocation("/dashboard");
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-[#041D21]">
@@ -43,21 +36,23 @@ export default function LandingPage() {
             Your Gateway to Professional Cue Sports Excellence
           </p>
           <div className="space-x-4">
-            <Button 
-              size="lg" 
-              className="bg-[#C4A44E] hover:bg-[#D4C28A] text-white"
-              onClick={() => setLocation("/auth")}
-            >
-              Get Started
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-[#C4A44E] text-[#C4A44E] hover:bg-[#C4A44E]/10"
-              onClick={() => setLocation("/auth")}
-            >
-              View Tournaments
-            </Button>
+            <Link href="/auth">
+              <Button 
+                size="lg" 
+                className="bg-[#C4A44E] hover:bg-[#D4C28A] text-white"
+              >
+                Get Started
+              </Button>
+            </Link>
+            <Link href="/tournaments">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-[#C4A44E] text-[#C4A44E] hover:bg-[#C4A44E]/10"
+              >
+                View Tournaments
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
