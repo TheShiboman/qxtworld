@@ -26,15 +26,21 @@ export function useFirebaseAuth() {
     // Set Firebase persistence to local
     setPersistence(auth, browserLocalPersistence);
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
+    // Handle Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
         setAuthState("success");
       } else {
         setUser(null);
         setAuthState("idle");
       }
       setLoading(false);
+    }, (error) => {
+      console.error('Auth state change error:', error);
+      setError(error);
+      setLoading(false);
+      setAuthState("error");
     });
 
     return () => unsubscribe();
@@ -47,19 +53,19 @@ export function useFirebaseAuth() {
       sessionStorage.clear();
       queryClient.clear();
 
-      // Sign out from Firebase
-      await signOut(auth);
-
       // Clear backend session
       await fetch('/api/logout', {
         method: 'POST',
         credentials: 'include'
       });
 
+      // Sign out from Firebase
+      await signOut(auth);
+
       // Force a complete reload to clear all state
       window.location.href = '/auth';
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign out error:', error);
       toast({
         title: "Error",

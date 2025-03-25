@@ -13,8 +13,10 @@ export function FirebaseAuthButton() {
     try {
       setIsLoading(true);
       if (authState === "success") {
+        // If logged in, perform logout
         await signOut();
       } else {
+        // If logged out, perform login
         await signInWithGoogle();
       }
     } catch (error) {
