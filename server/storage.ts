@@ -12,17 +12,16 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;  // Added this method
   createUser(user: InsertUser): Promise<User>;
   listUsers(): Promise<User[]>;
-  updateUser(id: number, data: Partial<User>): Promise<User>;
+  updateUser(id: number, data: Partial<User>): Promise<User>; // Added updateUser method
 
   // Tournament operations
   createTournament(tournament: Tournament): Promise<Tournament>;
   getTournament(id: number): Promise<Tournament | undefined>;
   listTournaments(): Promise<Tournament[]>;
   updateTournament(id: number, data: Partial<Tournament>): Promise<Tournament>;
-  
+
   // Match operations
   createMatch(match: Match): Promise<Match>;
   updateMatch(id: number, data: Partial<Match>): Promise<Match>;
@@ -30,25 +29,25 @@ export interface IStorage {
   getMatchesByTournament(tournamentId: number): Promise<Match[]>;
   getMatchByNumber(tournamentId: number, matchNumber: number): Promise<Match | undefined>;
   getPlayerMatches(playerId: number): Promise<Match[]>;
-  
+
   // Product operations
   createProduct(product: Product): Promise<Product>;
   getProduct(id: number): Promise<Product | undefined>;
   listProducts(): Promise<Product[]>;
-  
+
   // Prediction operations
   createPrediction(prediction: InsertPrediction): Promise<Prediction>;
   getPrediction(id: number): Promise<Prediction | undefined>;
   getUserPredictions(userId: number): Promise<Prediction[]>;
   getTournamentPredictions(tournamentId: number): Promise<Prediction[]>;
   getLeaderboard(tournamentId: number): Promise<Array<{ user: User; points: number }>>;
-  
+
   // Tournament registration operations
   createTournamentRegistration(registration: InsertTournamentRegistration): Promise<TournamentRegistration>;
   getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]>;
   getUserTournamentRegistrations(userId: number): Promise<TournamentRegistration[]>;
   updateTournamentRegistration(id: number, data: Partial<TournamentRegistration>): Promise<TournamentRegistration>;
-  
+
   // Add new method for getting uncompleted matches
   getTournamentUncompletedMatches(tournamentId: number): Promise<Match[]>;
   listVenues(): Promise<Venue[]>;
@@ -67,7 +66,7 @@ export class DatabaseStorage implements IStorage {
       createTableIfMissing: true,
       tableName: 'user_sessions',
       schemaName: 'public',
-      pruneSessionInterval: 60 * 15,
+      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
       errorLog: console.error.bind(console)
     });
   }
@@ -82,25 +81,9 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
-  }
-
   async createUser(insertUser: InsertUser): Promise<User> {
-    try {
-      console.log('Creating new user:', {
-        email: insertUser.email,
-        type: insertUser.password ? 'traditional' : 'google'
-      });
-
-      const [user] = await db.insert(users).values(insertUser).returning();
-      console.log('User created successfully:', user.email);
-      return user;
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw new Error('Failed to create user account');
-    }
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
   }
 
   async listUsers(): Promise<User[]> {

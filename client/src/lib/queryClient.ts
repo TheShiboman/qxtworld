@@ -8,7 +8,7 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
+async function getAuthHeaders() {
   const user = auth.currentUser;
   if (!user) {
     console.log('No current user found for auth headers');

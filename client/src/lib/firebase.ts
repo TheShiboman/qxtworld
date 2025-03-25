@@ -1,60 +1,15 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import app from "./firebase-config";
 
-// Required Firebase configuration values
-const requiredEnvVars = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-// Validate all required environment variables are present
-Object.entries(requiredEnvVars).forEach(([key, value]) => {
-  if (!value) {
-    throw new Error(`Missing required Firebase configuration: ${key}`);
-  }
-});
-
-const firebaseConfig = {
-  apiKey: requiredEnvVars.apiKey,
-  authDomain: `${requiredEnvVars.projectId}.firebaseapp.com`,
-  projectId: requiredEnvVars.projectId,
-  storageBucket: `${requiredEnvVars.projectId}.appspot.com`,
-  messagingSenderId: "689094503093",
-  appId: requiredEnvVars.appId
-};
-
-// Initialize Firebase with current environment information
-console.log('Initializing Firebase with:', {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  currentOrigin: window.location.origin, // Log current origin for debugging
-  currentHostname: window.location.hostname
-});
-
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
 
-// Set persistence to LOCAL to handle mobile browser sessions better
-setPersistence(auth, browserLocalPersistence)
-  .then(() => console.log('Firebase persistence set to LOCAL'))
-  .catch((error) => {
-    console.error('Error setting persistence:', {
-      code: error.code,
-      message: error.message,
-      stack: error.stack
-    });
-  });
-
+// Initialize Google Auth Provider with proper configuration
 export const googleProvider = new GoogleAuthProvider();
-
-// Configure Google Auth Provider
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
 googleProvider.setCustomParameters({
-  // Force account selection and allow_signup to handle new users
-  prompt: 'select_account',
-  allow_signup: 'true'
+  prompt: 'select_account'
 });
 
 export default app;

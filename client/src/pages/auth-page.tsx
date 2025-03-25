@@ -10,6 +10,7 @@ import { insertUserSchema } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy } from "lucide-react";
 import { useEffect } from "react";
+import { FirebaseAuthButton } from "@/components/auth/firebase-auth-button";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -68,6 +69,18 @@ export default function AuthPage() {
             <CardTitle className="text-3xl font-bold text-[#c4a45b]">Welcome to QXT World</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-6">
+              <FirebaseAuthButton />
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-[#c4a45b]/20" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+            </div>
+
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login" className="text-[#c4a45b] data-[state=active]:bg-[#062128] data-[state=active]:text-[#e6c680]">Login</TabsTrigger>

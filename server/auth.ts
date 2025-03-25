@@ -6,6 +6,18 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import admin from "firebase-admin";
+
+// Initialize Firebase Admin with proper error handling
+try {
+  admin.initializeApp({
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    credential: admin.credential.applicationDefault()
+  });
+  console.log('Firebase Admin initialized successfully');
+} catch (error) {
+  console.error('Firebase Admin initialization error:', error);
+}
 
 declare global {
   namespace Express {
@@ -28,6 +40,66 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Update the verifyFirebaseToken middleware with more detailed logging
+async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  console.log('Verifying Firebase token, auth header present:', !!authHeader);
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    console.log('No Bearer token found, continuing to next middleware');
+    return next();
+  }
+
+  try {
+    const token = authHeader.split('Bearer ')[1];
+    console.log('Attempting to verify token of length:', token.length);
+
+    // Add error handling for Firebase Admin initialization
+    if (!admin.apps.length) {
+      console.error('Firebase Admin not initialized, attempting initialization...');
+      try {
+        admin.initializeApp({
+          projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+          credential: admin.credential.applicationDefault()
+        });
+        console.log('Firebase Admin initialized successfully');
+      } catch (initError) {
+        console.error('Firebase Admin initialization error:', initError);
+        return next();
+      }
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    console.log('Token verified successfully for user:', decodedToken.email, 'uid:', decodedToken.uid);
+
+    // Set user info from Firebase token
+    req.user = {
+      id: parseInt(decodedToken.uid) || 0,
+      username: decodedToken.email || '',
+      password: '', // Required by type but not used for Firebase auth
+      role: 'player',
+      fullName: decodedToken.name || '',
+      email: decodedToken.email || '',
+      rating: 1500,
+      createdAt: new Date()
+    };
+    console.log('User object set from Firebase token:', { 
+      email: req.user.email, 
+      role: req.user.role 
+    });
+    next();
+  } catch (error) {
+    console.error('Error verifying Firebase token:', error);
+    if (error.code === 'auth/id-token-expired') {
+      console.log('Token expired, client should refresh');
+    } else if (error.code === 'auth/invalid-credential') {
+      console.error('Invalid credential configuration');
+    }
+    // Don't send error to client, just continue to next middleware
+    next();
+  }
+}
+
 export function setupAuth(app: Express) {
   if (!process.env.SESSION_SECRET) {
     throw new Error("SESSION_SECRET must be set");
@@ -46,15 +118,30 @@ export function setupAuth(app: Express) {
       path: "/",
       domain: process.env.NODE_ENV === "production" ? ".replit.app" : undefined
     },
-    name: "qxt.sid"
+    name: "qxt.sid",
+    rolling: true,
   };
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(verifyFirebaseToken);
 
-  // Set up passport serialization
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
+        }
+        return done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    })
+  );
+
   passport.serializeUser((user, done) => {
     done(null, user.id);
   });
@@ -68,94 +155,39 @@ export function setupAuth(app: Express) {
     }
   });
 
-
-  // Traditional login route
-  app.post("/api/login", async (req, res) => {
-    try {
-      console.log('Traditional login attempt for username:', req.body.username);
-      const { username, password } = req.body;
-      const user = await storage.getUserByUsername(username);
-
-      if (!user || !(await comparePasswords(password, user.password))) {
-        console.log('Login failed: Invalid credentials for username:', username);
-        return res.status(401).json({ message: "Invalid username or password" });
-      }
-
-      req.login(user, (err) => {
-        if (err) {
-          console.error('Login error:', err);
-          return res.status(500).json({ message: "Login failed" });
-        }
-        const { password, ...safeUser } = user;
-        console.log('Login successful for user:', username);
-        res.json(safeUser);
-      });
-    } catch (error) {
-      console.error('Login route error:', error);
-      res.status(500).json({ message: "Internal server error" });
-    }
+  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+    res.json(req.user);
   });
 
-  // Registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      console.log('Traditional registration attempt for username:', req.body.username);
-
-      // Check for existing user by username
-      const existingUsername = await storage.getUserByUsername(req.body.username);
-      if (existingUsername) {
-        console.log('Registration failed: Username already exists:', req.body.username);
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
-      }
-
-      // Check for existing user by email
-      const existingEmail = await storage.getUserByEmail(req.body.email);
-      if (existingEmail) {
-        console.log('Registration failed: Email already exists:', req.body.email);
-        return res.status(400).json({ message: "Email already exists" });
       }
 
       const hashedPassword = await hashPassword(req.body.password);
       const user = await storage.createUser({
         ...req.body,
         password: hashedPassword,
-        role: 'player',
-        rating: 1500
       });
 
-      console.log('User registered successfully:', user.email);
-
-      // Log the user in after registration
       req.login(user, (err) => {
-        if (err) {
-          console.error('Auto-login after registration failed:', err);
-          return next(err);
-        }
+        if (err) return next(err);
         const { password, ...safeUser } = user;
         res.status(201).json(safeUser);
       });
     } catch (error) {
-      console.error('Registration error:', error);
       next(error);
     }
   });
 
   app.post("/api/logout", (req, res, next) => {
-    console.log('Logout requested for user:', req.user?.email);
-
     req.logout((err) => {
-      if (err) {
-        console.error('Logout error:', err);
-        return next(err);
-      }
-
+      if (err) return next(err);
       req.session.destroy((err) => {
-        if (err) {
-          console.error('Session destruction error:', err);
-          return next(err);
-        }
+        if (err) return next(err);
         res.clearCookie("qxt.sid");
-        console.log('User logged out and session cleared successfully');
         res.sendStatus(200);
       });
     });
@@ -163,7 +195,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+      return res.sendStatus(401);
     }
     const { password, ...safeUser } = req.user;
     res.json(safeUser);
