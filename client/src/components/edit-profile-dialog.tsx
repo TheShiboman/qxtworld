@@ -50,6 +50,25 @@ export function EditProfileDialog() {
     e.preventDefault();
     if (!auth.currentUser) return;
 
+    // Validate displayName and bio
+    if (!formData.displayName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Display name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.bio.length > 300) {
+      toast({
+        title: "Validation Error",
+        description: "Bio must not exceed 300 characters",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -117,12 +136,19 @@ export function EditProfileDialog() {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Bio</label>
-            <Textarea
-              value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              maxLength={500}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Textarea
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                maxLength={300}
+                disabled={isLoading}
+                className="resize-none"
+                rows={4}
+              />
+              <span className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+                {formData.bio.length}/300
+              </span>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Profile Picture</label>
