@@ -49,6 +49,7 @@ export function EditProfileDialog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Starting profile update...");
 
     try {
       setIsLoading(true);
@@ -56,20 +57,24 @@ export function EditProfileDialog() {
       // Upload image if selected
       let photoURL = formData.photoURL;
       if (imageFile) {
+        console.log("Uploading image...");
         const storage = getStorage();
         const imageRef = ref(storage, `profilePictures/${auth.currentUser?.uid || 'temp'}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
+        console.log("Image uploaded, URL:", photoURL);
       }
 
-      // Update profile via API
+      console.log("Sending profile update request...");
       const response = await apiRequest("PATCH", "/api/user/profile", {
         displayName: formData.displayName,
         bio: formData.bio,
         photoURL
       });
 
+      console.log("Profile update response:", response);
       const updatedUser = await response.json();
+      console.log("Updated user data:", updatedUser);
 
       // Update query cache
       queryClient.setQueryData(["/api/user"], updatedUser);
