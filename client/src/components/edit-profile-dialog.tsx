@@ -6,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth, updateProfile } from "@/lib/firebase";
-import { queryClient } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface EditProfileFormData {
   displayName: string;
@@ -49,14 +49,6 @@ export function EditProfileDialog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to update your profile",
-        variant: "destructive"
-      });
-      return;
-    }
 
     try {
       setIsLoading(true);
@@ -65,24 +57,22 @@ export function EditProfileDialog() {
       let photoURL = formData.photoURL;
       if (imageFile) {
         const storage = getStorage();
-        const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
+        const imageRef = ref(storage, `profilePictures/${auth.currentUser?.uid || 'temp'}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
       }
 
-      // Update Firebase Auth profile
-      await updateProfile(auth.currentUser, {
+      // Update profile via API
+      const response = await apiRequest("PATCH", "/api/user/profile", {
         displayName: formData.displayName,
-        photoURL: photoURL || null
+        bio: formData.bio,
+        photoURL
       });
 
-      // Update query cache with new profile data
-      queryClient.setQueryData(["/api/user"], {
-        ...auth.currentUser,
-        displayName: formData.displayName,
-        photoURL,
-        bio: formData.bio
-      });
+      const updatedUser = await response.json();
+
+      // Update query cache
+      queryClient.setQueryData(["/api/user"], updatedUser);
 
       toast({
         title: "Success",
