@@ -6,12 +6,11 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import admin from "firebase-admin";
+import admin from 'firebase-admin';
 
 // Initialize Firebase Admin with proper error handling
 try {
   admin.initializeApp({
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
     credential: admin.credential.cert({
       projectId: process.env.VITE_FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -21,6 +20,7 @@ try {
   console.log('Firebase Admin initialized successfully');
 } catch (error) {
   console.error('Firebase Admin initialization error:', error);
+  throw error; // This is critical, we need Firebase Admin to work
 }
 
 declare global {
@@ -63,7 +63,6 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
       console.error('Firebase Admin not initialized, attempting initialization...');
       try {
         admin.initializeApp({
-          projectId: process.env.VITE_FIREBASE_PROJECT_ID,
           credential: admin.credential.cert({
             projectId: process.env.VITE_FIREBASE_PROJECT_ID,
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -125,8 +124,6 @@ export function setupAuth(app: Express) {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: "/",
-      domain: process.env.NODE_ENV === "production" ? ".replit.app" : undefined
     },
     name: "qxt.sid",
     rolling: true,

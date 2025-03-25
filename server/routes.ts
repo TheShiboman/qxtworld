@@ -12,9 +12,7 @@ import {
   insertVenueSchema 
 } from "@shared/schema";
 import { TournamentService } from "./services/tournament-service";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import admin from 'firebase-admin'; // Added import for Firebase Admin SDK
-
+import admin from 'firebase-admin';
 
 // Only initialize Stripe if we have the secret key
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -23,6 +21,63 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Update the profile update endpoint to properly handle Firebase token verification
+  app.patch('/api/user/profile', async (req, res) => {
+    try {
+      // Get the authorization header
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      console.log("Verifying token for profile update...");
+
+      // Verify the Firebase token
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      console.log("Token verified, user:", decodedToken.uid);
+
+      const { displayName, bio, photoURL } = req.body;
+
+      // Validate input
+      if (!displayName?.trim()) {
+        return res.status(400).json({ message: "Display name is required" });
+      }
+
+      if (bio && bio.length > 300) {
+        return res.status(400).json({ message: "Bio must not exceed 300 characters" });
+      }
+
+      // Update Firebase Auth user profile
+      await admin.auth().updateUser(decodedToken.uid, {
+        displayName,
+        photoURL
+      });
+
+      // Store additional profile data in Firestore using Admin SDK
+      const userDoc = await admin.firestore().collection('users').doc(decodedToken.uid);
+      await userDoc.set({
+        displayName,
+        bio,
+        photoURL,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      // Return updated user data
+      res.json({
+        displayName,
+        bio,
+        photoURL,
+        uid: decodedToken.uid,
+        email: decodedToken.email
+      });
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update profile" });
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
@@ -219,59 +274,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update the profile update endpoint to properly handle Firebase token verification
-  app.patch('/api/user/profile', async (req, res) => {
-    try {
-      // Get the authorization header
-      const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith('Bearer ')) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-
-      const token = authHeader.split('Bearer ')[1];
-      console.log("Verifying token for profile update...");
-
-      // Verify the Firebase token
-      const decodedToken = await admin.auth().verifyIdToken(token);
-      console.log("Token verified, user:", decodedToken.uid);
-
-      const { displayName, bio, photoURL } = req.body;
-
-      // Validate input
-      if (!displayName?.trim()) {
-        return res.status(400).json({ message: "Display name is required" });
-      }
-
-      if (bio && bio.length > 300) {
-        return res.status(400).json({ message: "Bio must not exceed 300 characters" });
-      }
-
-      // Update user profile in Firestore
-      const db = getFirestore();
-      const userRef = doc(db, "users", decodedToken.uid);
-
-      const profileData = {
-        displayName,
-        bio,
-        photoURL,
-        updatedAt: new Date().toISOString()
-      };
-
-      console.log("Updating profile:", profileData);
-      await setDoc(userRef, profileData, { merge: true });
-      console.log("Profile updated successfully");
-
-      // Return updated user data
-      res.json({
-        ...profileData,
-        uid: decodedToken.uid,
-        email: decodedToken.email
-      });
-    } catch (error) {
-      console.error("Failed to update profile:", error);
-      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update profile" });
-    }
-  });
 
   // Stripe payment route
   app.post('/api/create-payment-intent', async (req, res) => {
