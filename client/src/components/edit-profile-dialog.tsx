@@ -21,7 +21,7 @@ export function EditProfileDialog() {
   const [formData, setFormData] = useState<EditProfileFormData>({
     displayName: auth.currentUser?.displayName || "",
     bio: "",
-    photoURL: auth.currentUser?.photoURL
+    photoURL: auth.currentUser?.photoURL || undefined
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -49,7 +49,14 @@ export function EditProfileDialog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to update your profile",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Validate displayName and bio
     if (!formData.displayName.trim()) {
@@ -76,6 +83,11 @@ export function EditProfileDialog() {
       // Upload image if selected
       let photoURL = formData.photoURL;
       if (imageFile) {
+        toast({
+          title: "Uploading",
+          description: "Uploading profile picture..."
+        });
+
         const storage = getStorage();
         const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
         await uploadBytes(imageRef, imageFile);
@@ -90,7 +102,7 @@ export function EditProfileDialog() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        throw new Error(await response.text());
       }
 
       const updatedUser = await response.json();
@@ -105,8 +117,8 @@ export function EditProfileDialog() {
       queryClient.setQueryData(["/api/user"], updatedUser);
 
       toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated."
+        title: "Success",
+        description: "Your profile has been updated successfully"
       });
 
       // Reset form and close dialog
@@ -117,7 +129,7 @@ export function EditProfileDialog() {
       console.error("Error updating profile:", error);
       toast({
         title: "Update failed",
-        description: "Failed to update profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -181,16 +193,27 @@ export function EditProfileDialog() {
               />
             </div>
           </div>
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
+          <div className="flex gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isLoading}
+              onClick={() => setIsOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading} className="flex-1">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
