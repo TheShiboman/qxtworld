@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 
 export function FirebaseAuthButton() {
@@ -9,14 +8,12 @@ export function FirebaseAuthButton() {
   const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
   const { toast } = useToast();
 
-  const handleAction = async () => {
+  const handleClick = async () => {
     try {
       setIsLoading(true);
       if (authState === "success") {
-        // If logged in, perform logout
         await signOut();
       } else {
-        // If logged out, perform login
         await signInWithGoogle();
       }
     } catch (error) {
@@ -35,7 +32,7 @@ export function FirebaseAuthButton() {
     <div className="relative">
       <Button
         variant="outline"
-        onClick={handleAction}
+        onClick={handleClick}
         disabled={isLoading || authState === "loading"}
         className="w-full"
       >
@@ -61,20 +58,6 @@ export function FirebaseAuthButton() {
         )}
         {authState === "success" ? "Sign out" : "Sign in with Google"}
       </Button>
-
-      {authState !== "idle" && (
-        <div className="absolute -bottom-12 left-0 right-0">
-          <LoadingIndicator 
-            state={authState}
-            message={
-              authState === "loading" ? "Processing authentication..." :
-              authState === "success" ? "Successfully authenticated!" :
-              authState === "error" ? "Authentication failed" :
-              undefined
-            }
-          />
-        </div>
-      )}
     </div>
   );
 }

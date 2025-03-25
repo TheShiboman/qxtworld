@@ -23,24 +23,13 @@ export function useFirebaseAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set Firebase persistence to local
-    setPersistence(auth, browserLocalPersistence);
+    // Set Firebase persistence to session
+    setPersistence(auth, browserSessionPersistence);
 
-    // Handle Firebase auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        setAuthState("success");
-      } else {
-        setUser(null);
-        setAuthState("idle");
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setAuthState(user ? "success" : "idle");
       setLoading(false);
-    }, (error) => {
-      console.error('Auth state change error:', error);
-      setError(error);
-      setLoading(false);
-      setAuthState("error");
     });
 
     return () => unsubscribe();
@@ -48,7 +37,10 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // Clear everything in a single synchronous block
+      // Sign out from Firebase first
+      await signOut(auth);
+
+      // Clear all client state immediately
       localStorage.clear();
       sessionStorage.clear();
       queryClient.clear();
@@ -59,11 +51,8 @@ export function useFirebaseAuth() {
         credentials: 'include'
       });
 
-      // Sign out from Firebase
-      await signOut(auth);
-
-      // Force a complete reload to clear all state
-      window.location.href = '/auth';
+      // Force a hard browser reload to clear everything
+      document.location.href = '/auth';
 
     } catch (error: any) {
       console.error('Sign out error:', error);
