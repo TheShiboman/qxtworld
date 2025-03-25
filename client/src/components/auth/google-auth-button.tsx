@@ -1,23 +1,43 @@
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
 
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const { user, signOut } = useAuth();
+  const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Handle mobile redirect
+    if (typeof window !== 'undefined') {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isRedirectReturn = document.referrer.includes('accounts.google.com');
+      const currentPath = window.location.pathname;
+
+      if (isMobile && isRedirectReturn && currentPath === '/') {
+        // Force reload on mobile after redirect
+        window.location.reload();
+      }
+    }
+  }, []);
 
   const handleAuth = async () => {
     try {
       setIsLoading(true);
-      if (user) {
+      if (authState === "success") {
         await signOut();
       } else {
-        // Redirect to Google OAuth endpoint
-        window.location.href = '/api/auth/google';
+        await signInWithGoogle();
       }
     } catch (error) {
       console.error('Auth error:', error);
+      toast({
+        title: "Error",
+        description: "Authentication failed. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -27,10 +47,10 @@ export function GoogleAuthButton() {
     <Button
       variant="outline"
       onClick={handleAuth}
-      disabled={isLoading}
+      disabled={isLoading || authState === "loading"}
       className="w-full relative"
     >
-      {isLoading ? (
+      {(isLoading || authState === "loading") ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -52,7 +72,7 @@ export function GoogleAuthButton() {
           />
         </svg>
       )}
-      {user ? "Sign out" : "Sign in with Google"}
+      {authState === "success" ? "Sign out" : "Sign in with Google"}
     </Button>
   );
 }
