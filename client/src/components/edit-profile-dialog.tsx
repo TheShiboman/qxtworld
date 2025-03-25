@@ -7,7 +7,6 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth } from "@/lib/firebase";
-import {  queryClient } from "@/lib/queryClient";
 
 interface EditProfileFormData {
   displayName: string;
@@ -31,7 +30,6 @@ export function EditProfileDialog() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type and size
     if (!file.type.match(/image\/(jpeg|png)/) || file.size > 2 * 1024 * 1024) {
       toast({
         title: "Invalid file",
@@ -50,22 +48,36 @@ export function EditProfileDialog() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!auth.currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to update your profile",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
-      let photoURL = formData.photoURL;
 
+      // First upload image if there is one
+      let photoURL = formData.photoURL;
       if (imageFile) {
         const storage = getStorage();
-        const imageRef = ref(storage, `profilePictures/${auth.currentUser?.uid || 'temp'}.jpg`);
+        const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
       }
 
+      // Get fresh token
+      const token = await auth.currentUser.getIdToken(true);
+
+      // Make API request with fresh token
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           displayName: formData.displayName,
@@ -75,22 +87,25 @@ export function EditProfileDialog() {
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to update profile');
       }
 
-      const updatedUser = await response.json();
-      queryClient.setQueryData(["/api/user"], updatedUser);
-
+      // Update successful
       toast({
         title: "Success",
-        description: "Your profile has been updated successfully"
+        description: "Profile updated successfully"
       });
 
       setIsOpen(false);
       setImageFile(null);
       setImagePreview(null);
+
+      // Force page reload to reflect changes
+      window.location.reload();
+
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Profile update error:", error);
       toast({
         title: "Update failed",
         description: error instanceof Error ? error.message : "Failed to update profile",
