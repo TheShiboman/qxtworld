@@ -49,7 +49,7 @@ export default function App() {
         <div className="min-h-screen bg-background text-foreground">
           <Switch>
             <Route path="/" />
-            <Route path="/auth" />
+            <Route path="/auth" component={AuthPage} />
             <Route>
               <Navbar />
             </Route>

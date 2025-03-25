@@ -7,11 +7,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Trophy, Video, Users, ShoppingBag, Calendar } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
+
+  // If user is already authenticated, redirect to dashboard
+  if (user) {
+    navigate("/dashboard");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#041D21]">
@@ -36,23 +43,21 @@ export default function LandingPage() {
             Your Gateway to Professional Cue Sports Excellence
           </p>
           <div className="space-x-4">
-            <Link href="/auth">
-              <Button 
-                size="lg" 
-                className="bg-[#C4A44E] hover:bg-[#D4C28A] text-white"
-              >
-                Get Started
-              </Button>
-            </Link>
-            <Link href="/tournaments">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-[#C4A44E] text-[#C4A44E] hover:bg-[#C4A44E]/10"
-              >
-                View Tournaments
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="bg-[#C4A44E] hover:bg-[#D4C28A] text-white"
+              onClick={() => navigate("/auth")}
+            >
+              Get Started
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-[#C4A44E] text-[#C4A44E] hover:bg-[#C4A44E]/10"
+              onClick={() => navigate("/tournaments")}
+            >
+              View Tournaments
+            </Button>
           </div>
         </div>
       </div>
