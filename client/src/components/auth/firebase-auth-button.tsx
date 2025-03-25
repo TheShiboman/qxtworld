@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { Loader2 } from "lucide-react";
@@ -9,20 +9,20 @@ export function FirebaseAuthButton() {
   const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
   const { toast } = useToast();
 
+  // Handle mobile redirect
   useEffect(() => {
-    // Handle mobile blank screen issue
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // If we return from redirect and still see blank screen, reload
+    if (typeof window !== 'undefined') {
+      // Check if we're returning from a redirect
+      const isRedirectReturn = document.referrer.includes('accounts.google.com');
+
+      if (isRedirectReturn && document.visibilityState === 'visible') {
+        // Force reload on mobile after redirect
         window.location.reload();
       }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
   }, []);
 
-  const handleClick = async () => {
+  const handleAuth = async () => {
     try {
       setIsLoading(true);
       if (authState === "success") {
@@ -31,7 +31,7 @@ export function FirebaseAuthButton() {
         await signInWithGoogle();
       }
     } catch (error) {
-      console.error('Auth action error:', error);
+      console.error('Auth error:', error);
       toast({
         title: "Error",
         description: "Authentication failed. Please try again.",
@@ -45,11 +45,11 @@ export function FirebaseAuthButton() {
   return (
     <Button
       variant="outline"
-      onClick={handleClick}
-      disabled={isLoading || authState === "loading"}
+      onClick={handleAuth}
+      disabled={isLoading}
       className="w-full relative"
     >
-      {(isLoading || authState === "loading") ? (
+      {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
