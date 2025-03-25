@@ -55,10 +55,6 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // Immediately update UI state
-      setLoading(true);
-      setAuthState("loading");
-
       // Clear all client state first
       localStorage.clear();
       sessionStorage.clear();
@@ -72,16 +68,22 @@ export function useFirebaseAuth() {
         cache: 'no-store'
       });
 
+      // Force Firebase token refresh to invalidate current token
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true);
+      }
+
       // Sign out from Firebase
       await signOut(auth);
 
-      // Reset all state
+      // Reset state
       setUser(null);
       setAuthState("idle");
+      setLoading(false);
       setError(null);
 
-      // Force a complete page reload
-      window.location.replace('/auth');
+      // Force a complete page reload to clear all state
+      window.location.assign('/auth');
 
     } catch (error: any) {
       console.error('Sign out error:', error);
@@ -90,8 +92,6 @@ export function useFirebaseAuth() {
         description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
