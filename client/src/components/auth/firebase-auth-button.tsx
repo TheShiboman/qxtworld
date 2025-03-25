@@ -1,26 +1,55 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { signInWithRedirect } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 
 export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
+  const { authState } = useFirebaseAuth();
   const { toast } = useToast();
 
-  const handleClick = async () => {
+  const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      if (authState === "success") {
-        await signOut();
+      console.log('Attempting Google sign-in...');
+
+      // Log Firebase configuration status
+      console.log('Firebase Configuration Check:', {
+        authInitialized: !!auth,
+        providerScopes: googleProvider.getScopes(),
+        customParams: googleProvider.getCustomParameters()
+      });
+
+      await signInWithRedirect(auth, googleProvider);
+    } catch (error: any) {
+      console.error('Google Sign-in Error Details:', {
+        code: error.code,
+        message: error.message,
+        customData: error.customData ? JSON.stringify(error.customData) : 'No additional details',
+        stack: error.stack
+      });
+
+      let errorMessage = 'Failed to sign in with Google. ';
+
+      // Specific error handling for API key issues
+      if (error.code === 'auth/invalid-api-key') {
+        console.error('Invalid API Key Error:', {
+          message: 'Firebase API key validation failed',
+          suggestion: 'Check Firebase Console for correct Web API Key'
+        });
+        errorMessage += 'Authentication configuration error. Please contact support.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage += 'Google sign-in is not enabled for this application.';
       } else {
-        await signInWithGoogle();
+        errorMessage += error.message || 'Please try again.';
       }
-    } catch (error) {
-      console.error('Auth action error:', error);
+
       toast({
-        title: "Error",
-        description: "Authentication action failed. Please try again.",
+        title: "Authentication Error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -32,7 +61,7 @@ export function FirebaseAuthButton() {
     <div className="relative">
       <Button
         variant="outline"
-        onClick={handleClick}
+        onClick={handleGoogleSignIn}
         disabled={isLoading || authState === "loading"}
         className="w-full"
       >
@@ -56,8 +85,22 @@ export function FirebaseAuthButton() {
             />
           </svg>
         )}
-        {authState === "success" ? "Sign out" : "Sign in with Google"}
+        Sign in with Google
       </Button>
+
+      {authState !== "idle" && (
+        <div className="absolute -bottom-12 left-0 right-0">
+          <LoadingIndicator 
+            state={authState}
+            message={
+              authState === "loading" ? "Authenticating with Google..." :
+              authState === "success" ? "Successfully authenticated!" :
+              authState === "error" ? "Authentication failed" :
+              undefined
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,27 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy } from "lucide-react";
 import { useEffect } from "react";
 import { FirebaseAuthButton } from "@/components/auth/firebase-auth-button";
-import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Show loading state while authentication status is being determined
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#041d21] to-[#062128] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#c4a45b]" />
-      </div>
-    );
-  }
-
-  // If authenticated, redirect to dashboard immediately
-  if (user) {
-    window.location.href = '/dashboard';
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
 
   const loginForm = useForm({
     defaultValues: {
