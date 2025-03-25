@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { Loader2 } from "lucide-react";
@@ -8,6 +8,19 @@ export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
   const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Handle mobile blank screen issue
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // If we return from redirect and still see blank screen, reload
+        window.location.reload();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   const handleClick = async () => {
     try {
@@ -21,7 +34,7 @@ export function FirebaseAuthButton() {
       console.error('Auth action error:', error);
       toast({
         title: "Error",
-        description: "Authentication action failed. Please try again.",
+        description: "Authentication failed. Please try again.",
         variant: "destructive",
       });
     } finally {

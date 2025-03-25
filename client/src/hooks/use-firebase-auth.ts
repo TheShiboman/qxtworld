@@ -23,8 +23,13 @@ export function useFirebaseAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set Firebase persistence to session
-    setPersistence(auth, browserSessionPersistence);
+    // Set Firebase persistence to local for better mobile support
+    setPersistence(auth, browserLocalPersistence);
+
+    // Clear any existing tokens on mount
+    if (auth.currentUser) {
+      auth.currentUser.getIdToken(true).catch(console.error);
+    }
 
     // Handle redirect result first
     getRedirectResult(auth)
@@ -38,9 +43,6 @@ export function useFirebaseAuth() {
         console.error('Redirect result error:', error);
         setError(error);
         setAuthState("error");
-      })
-      .finally(() => {
-        setLoading(false);
       });
 
     // Then set up auth state listener
@@ -48,6 +50,11 @@ export function useFirebaseAuth() {
       setUser(user);
       setAuthState(user ? "success" : "idle");
       setLoading(false);
+    }, (error) => {
+      console.error('Auth state change error:', error);
+      setError(error);
+      setLoading(false);
+      setAuthState("error");
     });
 
     return () => unsubscribe();
@@ -55,7 +62,17 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // Clear all client state first
+      setAuthState("loading");
+
+      // Force token refresh to invalidate current token
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true);
+      }
+
+      // Sign out from Firebase first
+      await auth.signOut();
+
+      // Clear all client state
       localStorage.clear();
       sessionStorage.clear();
       queryClient.clear();
@@ -68,22 +85,15 @@ export function useFirebaseAuth() {
         cache: 'no-store'
       });
 
-      // Force Firebase token refresh to invalidate current token
-      if (auth.currentUser) {
-        await auth.currentUser.getIdToken(true);
-      }
-
-      // Sign out from Firebase
-      await signOut(auth);
-
-      // Reset state
+      // Reset all state
       setUser(null);
       setAuthState("idle");
       setLoading(false);
       setError(null);
 
-      // Force a complete page reload to clear all state
-      window.location.assign('/auth');
+      // Force full page reload to clear everything
+      window.location.reload();
+      window.location.href = '/auth';
 
     } catch (error: any) {
       console.error('Sign out error:', error);
@@ -92,6 +102,7 @@ export function useFirebaseAuth() {
         description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
+      setAuthState("error");
     }
   };
 
