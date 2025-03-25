@@ -58,25 +58,6 @@ export function EditProfileDialog() {
       return;
     }
 
-    // Validate displayName and bio
-    if (!formData.displayName.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Display name is required",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (formData.bio.length > 300) {
-      toast({
-        title: "Validation Error",
-        description: "Bio must not exceed 300 characters",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       setIsLoading(true);
 
@@ -95,16 +76,13 @@ export function EditProfileDialog() {
         photoURL
       });
 
-      // Update local state
-      const updatedUser = {
+      // Update query cache
+      queryClient.setQueryData(["/api/user"], {
         ...auth.currentUser,
         displayName: formData.displayName,
         photoURL,
         bio: formData.bio
-      };
-
-      // Update query cache
-      queryClient.setQueryData(["/api/user"], updatedUser);
+      });
 
       toast({
         title: "Success",
