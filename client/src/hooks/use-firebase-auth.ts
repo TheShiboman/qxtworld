@@ -1,48 +1,31 @@
 import { useState, useEffect } from 'react';
-import {
+import { 
   signInWithRedirect,
   getRedirectResult,
-  GoogleAuthProvider,
-  signOut,
+  GoogleAuthProvider, 
+  signOut, 
   onAuthStateChanged,
-  type User as FirebaseUser
+  browserLocalPersistence,
+  browserSessionPersistence,
+  setPersistence,
+  type User as FirebaseUser 
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-
-type AuthState = "idle" | "loading" | "success" | "error";
+import type { LoadingState } from '@/components/ui/loading-indicator';
 
 export function useFirebaseAuth() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authState, setAuthState] = useState<AuthState>("idle");
+  const [error, setError] = useState<Error | null>(null);
+  const [authState, setAuthState] = useState<LoadingState>("idle");
   const { toast } = useToast();
 
   useEffect(() => {
-    // Handle the redirect result first
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setUser(result.user);
-          setAuthState("success");
-          // After successful sign-in, redirect to dashboard
-          window.location.href = '/dashboard';
-        }
-      })
-      .catch((error) => {
-        console.error('Redirect result error:', error);
-        setError(error);
-        setAuthState("error");
-        toast({
-          title: "Authentication Error",
-          description: "Failed to complete authentication. Please try again.",
-          variant: "destructive",
-        });
-      });
+    // Set Firebase persistence to session
+    setPersistence(auth, browserSessionPersistence);
 
-    // Set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setAuthState(user ? "success" : "idle");
@@ -50,46 +33,31 @@ export function useFirebaseAuth() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
-
-  const signInWithGoogle = async () => {
-    try {
-      setAuthState("loading");
-      await signInWithRedirect(auth, googleProvider);
-    } catch (error) {
-      console.error('Sign in error:', error);
-      setError(error as Error);
-      setAuthState("error");
-      throw error;
-    }
-  };
+  }, []);
 
   const signOutUser = async () => {
     try {
-      setAuthState("loading");
+      // Sign out from Firebase first
+      await signOut(auth);
 
-      // Clear all client state first
+      // Clear all client state immediately
       localStorage.clear();
       sessionStorage.clear();
       queryClient.clear();
 
-      // Sign out from Firebase
-      await signOut(auth);
+      // Clear backend session
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
 
-      // Reset state
-      setUser(null);
-      setAuthState("idle");
-      setLoading(false);
-      setError(null);
+      // Force a hard browser reload to clear everything
+      document.location.href = '/auth';
 
-      // Redirect to landing page
-      window.location.href = '/';
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign out error:', error);
-      setError(error as Error);
       toast({
-        title: "Sign out failed",
+        title: "Error",
         description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
@@ -98,10 +66,23 @@ export function useFirebaseAuth() {
 
   return {
     user,
-    error,
     loading,
+    error,
     authState,
-    signInWithGoogle,
-    signOut: signOutUser,
+    signInWithGoogle: async () => {
+      try {
+        setAuthState("loading");
+        await signInWithRedirect(auth, googleProvider);
+      } catch (error: any) {
+        console.error('Sign in error:', error);
+        setAuthState("error");
+        toast({
+          title: "Error",
+          description: "Failed to sign in with Google",
+          variant: "destructive",
+        });
+      }
+    },
+    signOut: signOutUser
   };
 }

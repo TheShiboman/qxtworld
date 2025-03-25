@@ -12,11 +12,11 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function LandingPage() {
   const { user } = useAuth();
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
 
-  // If user is already authenticated, redirect to dashboard
+  // Redirect authenticated users trying to access /auth to dashboard
   if (user) {
-    navigate("/dashboard");
+    setLocation("/dashboard");
     return null;
   }
 
@@ -46,7 +46,7 @@ export default function LandingPage() {
             <Button 
               size="lg" 
               className="bg-[#C4A44E] hover:bg-[#D4C28A] text-white"
-              onClick={() => navigate("/auth")}
+              onClick={() => setLocation("/auth")}
             >
               Get Started
             </Button>
@@ -54,7 +54,7 @@ export default function LandingPage() {
               variant="outline"
               size="lg"
               className="border-[#C4A44E] text-[#C4A44E] hover:bg-[#C4A44E]/10"
-              onClick={() => navigate("/tournaments")}
+              onClick={() => setLocation("/auth")}
             >
               View Tournaments
             </Button>

@@ -29,14 +29,14 @@ function Router() {
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute path="/home" component={HomePage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
-      <Route path="/tournaments" component={TournamentPage} />
+      <ProtectedRoute path="/tournaments" component={TournamentPage} />
       <ProtectedRoute path="/tournaments/:id/live-scoring" component={LiveScoring} />
       <ProtectedRoute path="/training" component={TrainingPage} />
-      <Route path="/leaderboards" component={LeaderboardPage} />
-      <Route path="/community" component={CommunityPage} />
-      <Route path="/academy" component={AcademyPage} />
-      <Route path="/store" component={StorePage} />
-      <Route path="/live-streaming" component={LiveStreamingPage} />
+      <ProtectedRoute path="/leaderboards" component={LeaderboardPage} />
+      <ProtectedRoute path="/community" component={CommunityPage} />
+      <ProtectedRoute path="/academy" component={AcademyPage} />
+      <ProtectedRoute path="/store" component={StorePage} />
+      <ProtectedRoute path="/live-streaming" component={LiveStreamingPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -47,9 +47,10 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen bg-background text-foreground">
+          {/* Only show navbar on protected routes */}
           <Switch>
             <Route path="/" />
-            <Route path="/auth" component={AuthPage} />
+            <Route path="/auth" />
             <Route>
               <Navbar />
             </Route>
