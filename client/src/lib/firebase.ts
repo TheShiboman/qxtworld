@@ -31,9 +31,7 @@ export const auth = getAuth(app);
 // Configure persistence to session only
 setPersistence(auth, browserSessionPersistence)
   .then(() => console.log('Firebase persistence set to SESSION'))
-  .catch((error) => {
-    console.error('Error setting persistence:', error);
-  });
+  .catch(console.error);
 
 // Configure Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
