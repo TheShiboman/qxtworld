@@ -1,20 +1,25 @@
 import { initializeApp } from "firebase/app";
 
-// Log configuration loading (without exposing sensitive data)
-console.log('Loading Firebase configuration...', {
-  apiKeyExists: !!import.meta.env.VITE_FIREBASE_API_KEY,
-  projectIdExists: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appIdExists: !!import.meta.env.VITE_FIREBASE_APP_ID
-});
+// Validate required environment variables
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_APP_ID'
+] as const;
+
+for (const envVar of requiredEnvVars) {
+  if (!import.meta.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+}
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  messagingSenderId: "689094503093",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: "G-PLY2H1V4VT"
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "689094503093",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 console.log('Initializing Firebase with configuration:', {
@@ -22,7 +27,13 @@ console.log('Initializing Firebase with configuration:', {
   projectId: firebaseConfig.projectId
 });
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-console.log('Firebase app initialized successfully');
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+  console.log('Firebase app initialized successfully');
+} catch (error) {
+  console.error('Error initializing Firebase:', error);
+  throw error;
+}
+
 export default app;

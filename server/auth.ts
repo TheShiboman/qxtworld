@@ -8,22 +8,38 @@ import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin with proper error handling
+// Validate required environment variables for Firebase Admin
+const requiredEnvVars = [
+  'VITE_FIREBASE_PROJECT_ID',
+  'FIREBASE_CLIENT_EMAIL',
+  'FIREBASE_PRIVATE_KEY'
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+}
+
+// Initialize Firebase Admin
 if (!admin.apps.length) {
   try {
-    // Clean up the private key string by ensuring proper line breaks
+    // Format private key correctly
     const privateKey = process.env.FIREBASE_PRIVATE_KEY!
       .replace(/\\n/g, '\n')
-      .replace(/\n/g, '\n');
+      .trim();
 
-    admin.initializeApp({
+    const adminConfig = {
       credential: admin.credential.cert({
         projectId: process.env.VITE_FIREBASE_PROJECT_ID!,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
         privateKey: privateKey
-      })
-    });
-    console.log('Firebase Admin initialized successfully');
+      }),
+      databaseURL: `https://${process.env.VITE_FIREBASE_PROJECT_ID}.firebaseio.com`
+    };
+
+    admin.initializeApp(adminConfig);
+    console.log('Firebase Admin SDK initialized successfully');
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
     throw error;
@@ -51,39 +67,35 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Verify Firebase token middleware
+// Improve token verification middleware
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  console.log('Verifying Firebase token, auth header present:', !!authHeader);
 
   if (!authHeader?.startsWith('Bearer ')) {
-    console.log('No Bearer token found, continuing to next middleware');
     return next();
   }
 
   try {
     const token = authHeader.split('Bearer ')[1];
-    console.log('Attempting to verify token of length:', token.length);
-
     const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log('Token verified successfully for user:', decodedToken.email, 'uid:', decodedToken.uid);
 
     // Set user info from Firebase token
     req.user = {
       id: parseInt(decodedToken.uid) || 0,
       username: decodedToken.email || '',
       password: '', // Required by type but not used for Firebase auth
-      role: 'player',
+      role: 'player', // Default role
       fullName: decodedToken.name || '',
       email: decodedToken.email || '',
       rating: 1500,
       createdAt: new Date()
     };
+
     next();
   } catch (error) {
-    console.error('Error verifying Firebase token:', error);
-    if (error instanceof Error) {
-      console.error('Verification error details:', error.message);
+    console.error('Token verification failed:', error);
+    if (error instanceof Error && error.message.includes('auth/id-token-expired')) {
+      return res.status(401).json({ message: 'Token expired' });
     }
     next();
   }

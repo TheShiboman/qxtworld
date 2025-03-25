@@ -18,16 +18,16 @@ async function getAuthHeaders() {
   }
 
   try {
-    console.log('Getting Firebase token...');
+    // Force token refresh to ensure we have a valid token
     const token = await user.getIdToken(true);
-    console.log('Token obtained successfully');
     return {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     };
   } catch (error) {
     console.error("Error getting Firebase token:", error);
-    throw error;
+    // Re-throw the error to be handled by the calling function
+    throw new Error("Failed to get authentication token");
   }
 }
 
@@ -37,9 +37,7 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   try {
-    console.log(`Making ${method} request to ${url}`);
     const headers = await getAuthHeaders();
-    console.log('Got auth headers:', headers.Authorization ? 'Bearer token present' : 'No bearer token');
 
     const res = await fetch(url, {
       method,
@@ -48,7 +46,6 @@ export async function apiRequest(
       credentials: "include",
     });
 
-    console.log(`Response status:`, res.status);
     await throwIfResNotOk(res);
     return res;
   } catch (error) {
@@ -66,7 +63,6 @@ export const getQueryFn: <T>(options: {
     async ({ queryKey }) => {
       try {
         const headers = await getAuthHeaders();
-        console.log(`Making query request to ${queryKey[0]}, auth header present:`, !!headers.Authorization);
 
         const res = await fetch(queryKey[0] as string, {
           headers,
@@ -74,18 +70,20 @@ export const getQueryFn: <T>(options: {
         });
 
         if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-          console.log('Received 401, returning null as configured');
           return null;
         }
 
         await throwIfResNotOk(res);
         return await res.json();
       } catch (error) {
-        console.error(`Query failed (${queryKey[0]}):`, error);
+        if (error instanceof Error && error.message.includes("Failed to get authentication token")) {
+          if (unauthorizedBehavior === "returnNull") {
+            return null;
+          }
+        }
         throw error;
       }
     };
-
 
 export const queryClient = new QueryClient({
   defaultOptions: {
