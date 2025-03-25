@@ -26,6 +26,24 @@ export function useFirebaseAuth() {
     // Set Firebase persistence to session
     setPersistence(auth, browserSessionPersistence);
 
+    // Handle redirect result first
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          setUser(result.user);
+          setAuthState("success");
+        }
+      })
+      .catch((error) => {
+        console.error('Redirect result error:', error);
+        setError(error);
+        setAuthState("error");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+
+    // Then set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setAuthState(user ? "success" : "idle");
@@ -37,22 +55,33 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // Sign out from Firebase first
-      await signOut(auth);
+      // Immediately update UI state
+      setLoading(true);
+      setAuthState("loading");
 
-      // Clear all client state immediately
+      // Clear all client state first
       localStorage.clear();
       sessionStorage.clear();
       queryClient.clear();
+      queryClient.setQueryData(['/api/user'], null);
 
       // Clear backend session
       await fetch('/api/logout', {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
+        cache: 'no-store'
       });
 
-      // Force a hard browser reload to clear everything
-      document.location.href = '/auth';
+      // Sign out from Firebase
+      await signOut(auth);
+
+      // Reset all state
+      setUser(null);
+      setAuthState("idle");
+      setError(null);
+
+      // Force a complete page reload
+      window.location.replace('/auth');
 
     } catch (error: any) {
       console.error('Sign out error:', error);
@@ -61,6 +90,8 @@ export function useFirebaseAuth() {
         description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 

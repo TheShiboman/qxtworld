@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { Loader2 } from "lucide-react";
 
 export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,9 +35,11 @@ export function FirebaseAuthButton() {
         variant="outline"
         onClick={handleClick}
         disabled={isLoading || authState === "loading"}
-        className="w-full"
+        className="w-full relative"
       >
-        {authState === "loading" ? null : (
+        {(isLoading || authState === "loading") ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
             <path
               fill="currentColor"
