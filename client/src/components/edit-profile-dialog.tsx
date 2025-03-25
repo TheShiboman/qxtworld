@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -56,23 +57,18 @@ export function EditProfileDialog() {
       }
 
       // Get fresh token first
-      console.log("Getting fresh token...");
       const token = await auth.currentUser.getIdToken(true);
-      console.log("Got fresh token");
 
       // Upload image if present
       let photoURL = formData.photoURL;
       if (imageFile) {
-        console.log("Uploading image...");
         const storage = getStorage();
-        const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
+        const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
-        console.log("Image uploaded:", photoURL);
       }
 
       // Make profile update request
-      console.log("Sending profile update request...");
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: {
@@ -86,23 +82,17 @@ export function EditProfileDialog() {
         })
       });
 
-      console.log("Got response:", response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Error response:", errorText);
         throw new Error(errorText || `Server error: ${response.status}`);
       }
 
-      console.log("Profile updated successfully");
-
-      // Show success message
+      // Success
       toast({
         title: "Success",
         description: "Profile updated successfully"
       });
 
-      // Reset form state
       setIsOpen(false);
       setImageFile(null);
       setImagePreview(null);
@@ -133,25 +123,29 @@ export function EditProfileDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Display Name</label>
+            <Label htmlFor="displayName">Display Name</Label>
             <Input
+              id="displayName"
               value={formData.displayName}
               onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
               required
               disabled={isLoading}
+              aria-describedby="displayName-description"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Bio</label>
+            <Label htmlFor="bio">Bio</Label>
             <Textarea
+              id="bio"
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
               disabled={isLoading}
               rows={4}
+              aria-describedby="bio-description"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Profile Picture</label>
+            <Label htmlFor="photo">Profile Picture</Label>
             <div className="flex items-center gap-4">
               {imagePreview ? (
                 <img
@@ -167,10 +161,12 @@ export function EditProfileDialog() {
                 />
               ) : null}
               <Input
+                id="photo"
                 type="file"
                 accept="image/jpeg,image/png"
                 onChange={handleImageChange}
                 disabled={isLoading}
+                aria-describedby="photo-description"
               />
             </div>
           </div>

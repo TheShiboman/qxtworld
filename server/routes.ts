@@ -13,6 +13,8 @@ import {
 } from "@shared/schema";
 import { TournamentService } from "./services/tournament-service";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
+import admin from 'firebase-admin'; // Added import for Firebase Admin SDK
+
 
 // Only initialize Stripe if we have the secret key
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -217,13 +219,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add user profile update endpoint
+  // Update the profile update endpoint to properly handle Firebase token verification
   app.patch('/api/user/profile', async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
     try {
+      // Get the authorization header
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const token = authHeader.split('Bearer ')[1];
+      console.log("Verifying token for profile update...");
+
+      // Verify the Firebase token
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      console.log("Token verified, user:", decodedToken.uid);
+
       const { displayName, bio, photoURL } = req.body;
 
       // Validate input
@@ -237,25 +248,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update user profile in Firestore
       const db = getFirestore();
-      await setDoc(doc(db, "users", req.user!.id.toString()), {
+      const userRef = doc(db, "users", decodedToken.uid);
+
+      const profileData = {
         displayName,
         bio,
         photoURL,
         updatedAt: new Date().toISOString()
-      }, { merge: true });
-
-      // Return updated user data
-      const updatedUser = {
-        ...req.user,
-        displayName,
-        bio,
-        photoURL
       };
 
-      res.json(updatedUser);
+      console.log("Updating profile:", profileData);
+      await setDoc(userRef, profileData, { merge: true });
+      console.log("Profile updated successfully");
+
+      // Return updated user data
+      res.json({
+        ...profileData,
+        uid: decodedToken.uid,
+        email: decodedToken.email
+      });
     } catch (error) {
       console.error("Failed to update profile:", error);
-      res.status(500).json({ message: "Failed to update profile" });
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to update profile" });
     }
   });
 
