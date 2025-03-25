@@ -12,6 +12,7 @@ import {
   insertVenueSchema 
 } from "@shared/schema";
 import { TournamentService } from "./services/tournament-service";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 
 // Only initialize Stripe if we have the secret key
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -213,6 +214,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Add user profile update endpoint
+  app.patch('/api/user/profile', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const { displayName, bio, photoURL } = req.body;
+
+      // Validate input
+      if (!displayName?.trim()) {
+        return res.status(400).json({ message: "Display name is required" });
+      }
+
+      if (bio && bio.length > 300) {
+        return res.status(400).json({ message: "Bio must not exceed 300 characters" });
+      }
+
+      // Update user profile in Firestore
+      const db = getFirestore();
+      await setDoc(doc(db, "users", req.user!.id.toString()), {
+        displayName,
+        bio,
+        photoURL,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      // Return updated user data
+      const updatedUser = {
+        ...req.user,
+        displayName,
+        bio,
+        photoURL
+      };
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
     }
   });
 

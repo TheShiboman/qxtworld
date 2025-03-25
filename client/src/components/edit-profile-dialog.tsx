@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { auth } from "@/lib/firebase";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface EditProfileFormData {
   displayName: string;
@@ -75,26 +76,39 @@ export function EditProfileDialog() {
       // Upload image if selected
       let photoURL = formData.photoURL;
       if (imageFile) {
+        toast({
+          title: "Uploading",
+          description: "Uploading profile picture..."
+        });
+
         const storage = getStorage();
         const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
+
+        toast({
+          title: "Success",
+          description: "Profile picture uploaded successfully"
+        });
       }
 
-      // Update Firestore document
-      const db = getFirestore();
-      await setDoc(doc(db, "users", auth.currentUser.uid), {
+      // Update profile via API
+      const response = await apiRequest("PATCH", "/api/user/profile", {
         displayName: formData.displayName,
         bio: formData.bio,
-        photoURL,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+        photoURL
+      });
+
+      const updatedUser = await response.json();
 
       // Update Firebase Auth profile
       await auth.currentUser.updateProfile({
         displayName: formData.displayName,
         photoURL
       });
+
+      // Update query cache
+      queryClient.setQueryData(["/api/user"], updatedUser);
 
       toast({
         title: "Profile updated",
