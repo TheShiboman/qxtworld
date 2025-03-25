@@ -1,29 +1,23 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
-export function FirebaseAuthButton() {
+export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
-  const { toast } = useToast();
+  const { user, signOut } = useAuth();
 
   const handleAuth = async () => {
     try {
       setIsLoading(true);
-      if (authState === "success") {
+      if (user) {
         await signOut();
       } else {
-        await signInWithGoogle();
+        // Redirect to Google OAuth endpoint
+        window.location.href = '/api/auth/google';
       }
     } catch (error) {
       console.error('Auth error:', error);
-      toast({
-        title: "Error",
-        description: "Authentication failed. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -33,10 +27,10 @@ export function FirebaseAuthButton() {
     <Button
       variant="outline"
       onClick={handleAuth}
-      disabled={isLoading || authState === "loading"}
+      disabled={isLoading}
       className="w-full relative"
     >
-      {(isLoading || authState === "loading") ? (
+      {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -58,7 +52,7 @@ export function FirebaseAuthButton() {
           />
         </svg>
       )}
-      {authState === "success" ? "Sign out" : "Sign in with Google"}
+      {user ? "Sign out" : "Sign in with Google"}
     </Button>
   );
 }
