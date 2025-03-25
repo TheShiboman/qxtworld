@@ -9,31 +9,19 @@ export function FirebaseAuthButton() {
   const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
   const { toast } = useToast();
 
-  const handleSignOut = async () => {
+  const handleAction = async () => {
     try {
       setIsLoading(true);
-      await signOut();
+      if (authState === "success") {
+        await signOut();
+      } else {
+        await signInWithGoogle();
+      }
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Auth action error:', error);
       toast({
         title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsLoading(true);
-      await signInWithGoogle();
-    } catch (error: any) {
-      console.error('Google Sign-in Error:', error);
-      toast({
-        title: "Authentication Error",
-        description: "Failed to sign in with Google. Please try again.",
+        description: "Authentication action failed. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -45,7 +33,7 @@ export function FirebaseAuthButton() {
     <div className="relative">
       <Button
         variant="outline"
-        onClick={authState === "success" ? handleSignOut : handleGoogleSignIn}
+        onClick={handleAction}
         disabled={isLoading || authState === "loading"}
         className="w-full"
       >

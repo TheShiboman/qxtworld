@@ -26,25 +26,15 @@ export function useFirebaseAuth() {
     // Set Firebase persistence to local
     setPersistence(auth, browserLocalPersistence);
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) {
-          setUser(user);
-          setAuthState("success");
-        } else {
-          // Clear all client state on auth state change to null
-          queryClient.clear();
-          queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-          setUser(null);
-          setAuthState("idle");
-        }
-      } catch (error) {
-        console.error('Auth state change error:', error);
-        setError(error as Error);
-        setAuthState("error");
-      } finally {
-        setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+        setAuthState("success");
+      } else {
+        setUser(null);
+        setAuthState("idle");
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -52,44 +42,25 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // Start logout process
-      setAuthState("loading");
-
-      // Clear backend session first
-      await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
-      });
-
-      // Clear all client state
-      queryClient.clear();
+      // Clear everything in a single synchronous block
       localStorage.clear();
       sessionStorage.clear();
+      queryClient.clear();
 
-      // Sign out from Firebase and revoke token
-      if (auth.currentUser) {
-        try {
-          // Force token refresh to invalidate existing token
-          await auth.currentUser.getIdToken(true);
-        } catch (e) {
-          console.error('Token revocation failed:', e);
-        }
-      }
+      // Sign out from Firebase
       await signOut(auth);
 
-      // Reset state
-      setUser(null);
-      setAuthState("idle");
-      setLoading(false);
-      setError(null);
+      // Clear backend session
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
 
-      // Force a complete page reload to clear all state
-      window.location.assign('/auth');
+      // Force a complete reload to clear all state
+      window.location.href = '/auth';
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Sign out error:', error);
-      setAuthState("error");
       toast({
         title: "Error",
         description: "Failed to sign out. Please try again.",
