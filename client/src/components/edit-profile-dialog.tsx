@@ -47,32 +47,32 @@ export function EditProfileDialog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!auth.currentUser) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to update your profile",
-        variant: "destructive"
-      });
-      return;
-    }
+    setIsLoading(true);
 
     try {
-      setIsLoading(true);
+      // Check authentication
+      if (!auth.currentUser) {
+        throw new Error("You must be logged in to update your profile");
+      }
 
-      // First upload image if there is one
+      // Get fresh token first
+      console.log("Getting fresh token...");
+      const token = await auth.currentUser.getIdToken(true);
+      console.log("Got fresh token");
+
+      // Upload image if present
       let photoURL = formData.photoURL;
       if (imageFile) {
+        console.log("Uploading image...");
         const storage = getStorage();
         const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
+        console.log("Image uploaded:", photoURL);
       }
 
-      // Get fresh token
-      const token = await auth.currentUser.getIdToken(true);
-
-      // Make API request with fresh token
+      // Make profile update request
+      console.log("Sending profile update request...");
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: {
@@ -86,26 +86,32 @@ export function EditProfileDialog() {
         })
       });
 
+      console.log("Got response:", response.status);
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'Failed to update profile');
+        console.error("Error response:", errorText);
+        throw new Error(errorText || `Server error: ${response.status}`);
       }
 
-      // Update successful
+      console.log("Profile updated successfully");
+
+      // Show success message
       toast({
         title: "Success",
         description: "Profile updated successfully"
       });
 
+      // Reset form state
       setIsOpen(false);
       setImageFile(null);
       setImagePreview(null);
 
-      // Force page reload to reflect changes
+      // Reload the page to show updated profile
       window.location.reload();
 
     } catch (error) {
-      console.error("Profile update error:", error);
+      console.error("Profile update failed:", error);
       toast({
         title: "Update failed",
         description: error instanceof Error ? error.message : "Failed to update profile",
@@ -119,9 +125,7 @@ export function EditProfileDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full md:w-auto">
-          Edit Profile
-        </Button>
+        <Button variant="outline">Edit Profile</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -133,26 +137,18 @@ export function EditProfileDialog() {
             <Input
               value={formData.displayName}
               onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-              maxLength={50}
               required
               disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Bio</label>
-            <div className="relative">
-              <Textarea
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                maxLength={300}
-                disabled={isLoading}
-                className="resize-none"
-                rows={4}
-              />
-              <span className="absolute bottom-2 right-2 text-xs text-muted-foreground">
-                {formData.bio.length}/300
-              </span>
-            </div>
+            <Textarea
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              disabled={isLoading}
+              rows={4}
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Profile Picture</label>
