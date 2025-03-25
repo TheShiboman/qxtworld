@@ -25,7 +25,7 @@ async function getAuthHeaders() {
     };
   } catch (error) {
     console.error("Error getting Firebase token:", error);
-    return {};
+    throw error; // Propagate the error instead of returning empty headers
   }
 }
 
@@ -34,42 +34,53 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const headers = await getAuthHeaders();
-  console.log(`Making ${method} request to ${url}, auth header present:`, !!headers.Authorization);
+  try {
+    const headers = await getAuthHeaders();
+    console.log(`Making ${method} request to ${url}, auth header present:`, !!headers.Authorization);
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error(`API request failed (${method} ${url}):`, error);
+    throw error;
+  }
 }
 
-type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const headers = await getAuthHeaders();
-    console.log(`Making query request to ${queryKey[0]}, auth header present:`, !!headers.Authorization);
+    try {
+      const headers = await getAuthHeaders();
+      console.log(`Making query request to ${queryKey[0]}, auth header present:`, !!headers.Authorization);
 
-    const res = await fetch(queryKey[0] as string, {
-      headers,
-      credentials: "include",
-    });
+      const res = await fetch(queryKey[0] as string, {
+        headers,
+        credentials: "include",
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      console.log('Received 401, returning null as configured');
-      return null;
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.log('Received 401, returning null as configured');
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      return await res.json();
+    } catch (error) {
+      console.error(`Query failed (${queryKey[0]}):`, error);
+      throw error;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
+
+type UnauthorizedBehavior = "returnNull" | "throw";
 
 export const queryClient = new QueryClient({
   defaultOptions: {

@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth } from "@/lib/firebase";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 
 interface EditProfileFormData {
   displayName: string;
@@ -83,35 +83,25 @@ export function EditProfileDialog() {
       // Upload image if selected
       let photoURL = formData.photoURL;
       if (imageFile) {
-        toast({
-          title: "Uploading",
-          description: "Uploading profile picture..."
-        });
-
         const storage = getStorage();
         const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
       }
 
-      // Update profile via API
-      const response = await apiRequest("PATCH", "/api/user/profile", {
-        displayName: formData.displayName,
-        bio: formData.bio,
-        photoURL
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const updatedUser = await response.json();
-
       // Update Firebase Auth profile
       await auth.currentUser.updateProfile({
         displayName: formData.displayName,
         photoURL
       });
+
+      // Update local state
+      const updatedUser = {
+        ...auth.currentUser,
+        displayName: formData.displayName,
+        photoURL,
+        bio: formData.bio
+      };
 
       // Update query cache
       queryClient.setQueryData(["/api/user"], updatedUser);

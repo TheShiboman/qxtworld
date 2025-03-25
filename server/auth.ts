@@ -12,7 +12,11 @@ import admin from "firebase-admin";
 try {
   admin.initializeApp({
     projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    credential: admin.credential.applicationDefault()
+    credential: admin.credential.cert({
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    })
   });
   console.log('Firebase Admin initialized successfully');
 } catch (error) {
@@ -60,7 +64,11 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
       try {
         admin.initializeApp({
           projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-          credential: admin.credential.applicationDefault()
+          credential: admin.credential.cert({
+            projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+          })
         });
         console.log('Firebase Admin initialized successfully');
       } catch (initError) {
@@ -90,10 +98,12 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
     next();
   } catch (error) {
     console.error('Error verifying Firebase token:', error);
-    if (error.code === 'auth/id-token-expired') {
-      console.log('Token expired, client should refresh');
-    } else if (error.code === 'auth/invalid-credential') {
-      console.error('Invalid credential configuration');
+    if (error instanceof Error) {
+      if (error.message.includes('auth/id-token-expired')) {
+        console.log('Token expired, client should refresh');
+      } else if (error.message.includes('auth/invalid-credential')) {
+        console.error('Invalid credential configuration');
+      }
     }
     // Don't send error to client, just continue to next middleware
     next();
