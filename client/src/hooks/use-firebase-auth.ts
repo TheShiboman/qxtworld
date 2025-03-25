@@ -3,11 +3,11 @@ import {
   signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider, 
-  signOut, 
+  signOut,
   onAuthStateChanged,
   type User as FirebaseUser 
 } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, cleanupFirebase } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import type { LoadingState } from '@/components/ui/loading-indicator';
@@ -20,8 +20,19 @@ export function useFirebaseAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Handle initial redirect result
-    getRedirectResult(auth).catch(console.error);
+    // Handle redirect result
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          setUser(result.user);
+          setAuthState("success");
+        }
+      })
+      .catch((error) => {
+        console.error('Redirect result error:', error);
+        setError(error);
+        setAuthState("error");
+      });
 
     // Set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -35,13 +46,8 @@ export function useFirebaseAuth() {
 
   const signOutUser = async () => {
     try {
-      // Simple synchronous cleanup
-      localStorage.clear();
-      sessionStorage.clear();
-      queryClient.clear();
-
-      // Direct Firebase signout
-      await auth.signOut();
+      // Clear all browser storage and Firebase state
+      await cleanupFirebase();
 
       // Clear backend session
       await fetch('/api/logout', { 
@@ -49,7 +55,13 @@ export function useFirebaseAuth() {
         credentials: 'include'
       });
 
-      // Redirect
+      // Reset state
+      setUser(null);
+      setAuthState("idle");
+      setLoading(false);
+      setError(null);
+
+      // Force reload to auth page
       window.location.href = '/auth';
 
     } catch (error: any) {

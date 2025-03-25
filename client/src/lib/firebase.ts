@@ -1,5 +1,10 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from "firebase/auth";
+import { initializeApp, deleteApp } from "firebase/app";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  browserNonePersistence,
+  setPersistence
+} from "firebase/auth";
 
 // Required Firebase configuration values
 const requiredEnvVars = {
@@ -15,7 +20,7 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
   }
 });
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: requiredEnvVars.apiKey,
   authDomain: `${requiredEnvVars.projectId}.firebaseapp.com`,
   projectId: requiredEnvVars.projectId,
@@ -24,37 +29,45 @@ const firebaseConfig = {
   appId: requiredEnvVars.appId
 };
 
-// Initialize Firebase with current environment information
-console.log('Initializing Firebase with:', {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  currentOrigin: window.location.origin, // Log current origin for debugging
-  currentHostname: window.location.hostname
-});
-
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Set persistence to LOCAL to handle mobile browser sessions better
-setPersistence(auth, browserLocalPersistence)
-  .then(() => console.log('Firebase persistence set to LOCAL'))
-  .catch((error) => {
-    console.error('Error setting persistence:', {
-      code: error.code,
-      message: error.message,
-      stack: error.stack
-    });
-  });
-
-export const googleProvider = new GoogleAuthProvider();
+// Force non-persistent authentication
+setPersistence(auth, browserNonePersistence)
+  .then(() => console.log('Firebase persistence set to NONE'))
+  .catch(console.error);
 
 // Configure Google Auth Provider
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
+export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
-  // Force account selection and allow_signup to handle new users
-  prompt: 'select_account',
-  allow_signup: 'true'
+  prompt: 'select_account'
 });
+
+// Utility function to clean up Firebase state
+export async function cleanupFirebase() {
+  try {
+    // Close Firebase app first
+    await auth.signOut();
+    await deleteApp(app);
+
+    // Clear all storage
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Clear all IndexedDB databases
+    const databases = await window.indexedDB.databases();
+    await Promise.all(
+      databases.map(db => 
+        db.name ? window.indexedDB.deleteDatabase(db.name) : Promise.resolve()
+      )
+    );
+
+    console.log('Firebase cleanup completed');
+  } catch (error) {
+    console.error('Firebase cleanup failed:', error);
+    throw error;
+  }
+}
 
 export default app;

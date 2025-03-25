@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { Loader2 } from "lucide-react";
@@ -8,19 +8,6 @@ export function FirebaseAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
   const { authState, signInWithGoogle, signOut } = useFirebaseAuth();
   const { toast } = useToast();
-
-  // Handle mobile redirect
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Check if we're returning from a redirect
-      const isRedirectReturn = document.referrer.includes('accounts.google.com');
-
-      if (isRedirectReturn && document.visibilityState === 'visible') {
-        // Force reload on mobile after redirect
-        window.location.reload();
-      }
-    }
-  }, []);
 
   const handleAuth = async () => {
     try {
@@ -46,10 +33,10 @@ export function FirebaseAuthButton() {
     <Button
       variant="outline"
       onClick={handleAuth}
-      disabled={isLoading}
+      disabled={isLoading || authState === "loading"}
       className="w-full relative"
     >
-      {isLoading ? (
+      {(isLoading || authState === "loading") ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
