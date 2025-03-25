@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth } from "@/lib/firebase";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import {  queryClient } from "@/lib/queryClient";
 
 interface EditProfileFormData {
   displayName: string;
@@ -49,34 +49,36 @@ export function EditProfileDialog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Starting profile update...");
 
     try {
       setIsLoading(true);
-
-      // Upload image if selected
       let photoURL = formData.photoURL;
+
       if (imageFile) {
-        console.log("Uploading image...");
         const storage = getStorage();
         const imageRef = ref(storage, `profilePictures/${auth.currentUser?.uid || 'temp'}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
-        console.log("Image uploaded, URL:", photoURL);
       }
 
-      console.log("Sending profile update request...");
-      const response = await apiRequest("PATCH", "/api/user/profile", {
-        displayName: formData.displayName,
-        bio: formData.bio,
-        photoURL
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await auth.currentUser?.getIdToken()}`
+        },
+        body: JSON.stringify({
+          displayName: formData.displayName,
+          bio: formData.bio,
+          photoURL
+        })
       });
 
-      console.log("Profile update response:", response);
-      const updatedUser = await response.json();
-      console.log("Updated user data:", updatedUser);
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
 
-      // Update query cache
+      const updatedUser = await response.json();
       queryClient.setQueryData(["/api/user"], updatedUser);
 
       toast({
@@ -84,7 +86,6 @@ export function EditProfileDialog() {
         description: "Your profile has been updated successfully"
       });
 
-      // Reset form and close dialog
       setIsOpen(false);
       setImageFile(null);
       setImagePreview(null);
@@ -92,7 +93,7 @@ export function EditProfileDialog() {
       console.error("Error updating profile:", error);
       toast({
         title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update profile",
         variant: "destructive"
       });
     } finally {
