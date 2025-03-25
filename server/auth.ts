@@ -6,23 +6,6 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import admin from "firebase-admin";
-
-// Initialize Firebase Admin with proper error handling
-try {
-  admin.initializeApp({
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    credential: admin.credential.cert({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-    })
-  });
-  console.log('Firebase Admin initialized successfully');
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
-  throw error;
-}
 
 declare global {
   namespace Express {
@@ -43,111 +26,6 @@ async function comparePasswords(supplied: string, stored: string) {
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
-}
-
-// Update the verifyFirebaseToken middleware
-async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
-  // Skip Firebase verification for traditional login and registration routes
-  if (req.path === '/api/login' || req.path === '/api/register') {
-    return next();
-  }
-
-  const authHeader = req.headers.authorization;
-  console.log('Token verification attempt:', {
-    hasAuthHeader: !!authHeader,
-    headerType: authHeader?.split(' ')[0] || 'none',
-    tokenLength: authHeader?.split(' ')[1]?.length || 0
-  });
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    console.log('No Bearer token found, continuing to next middleware');
-    return next();
-  }
-
-  try {
-    const token = authHeader.split('Bearer ')[1];
-    console.log('Attempting to verify token of length:', token.length);
-
-    // Add error handling for Firebase Admin initialization
-    if (!admin.apps.length) {
-      console.error('Firebase Admin not initialized');
-      return res.status(500).json({ message: 'Authentication service unavailable' });
-    }
-
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log('Token verified successfully for:', {
-      email: decodedToken.email,
-      uid: decodedToken.uid
-    });
-
-    // Check if user exists in our database
-    let user = await storage.getUserByEmail(decodedToken.email || '');
-
-    // If user doesn't exist, create a new one
-    if (!user) {
-      console.log('Creating new user from Google sign-in:', decodedToken.email);
-      try {
-        // Clear any existing session
-        if (req.session) {
-          await new Promise((resolve, reject) => {
-            req.session.destroy((err) => {
-              if (err) reject(err);
-              resolve(true);
-            });
-          });
-        }
-
-        user = await storage.createUser({
-          username: decodedToken.email?.split('@')[0] || '',
-          email: decodedToken.email || '',
-          fullName: decodedToken.name || '',
-          password: '', // Not used for Google auth
-          passwordConfirm: '', // Add this required field
-          role: 'player'
-        });
-        console.log('New user created successfully:', {
-          email: user.email,
-          id: user.id
-        });
-      } catch (createError) {
-        console.error('Error creating new user:', createError);
-        return res.status(500).json({ message: 'Failed to create user account' });
-      }
-    } else {
-      console.log('Existing user found:', {
-        email: user.email,
-        id: user.id
-      });
-    }
-
-    // Set user info from database and create new session
-    return new Promise((resolve, reject) => {
-      req.login(user, (err) => {
-        if (err) {
-          console.error('Error setting user session:', err);
-          reject(err);
-          return;
-        }
-        console.log('User session created successfully for:', user.email);
-        resolve(next());
-      });
-    }).catch(error => {
-      return res.status(500).json({ message: 'Failed to create session' });
-    });
-
-  } catch (error: any) {
-    console.error('Error verifying Firebase token:', {
-      code: error.code,
-      message: error.message,
-      errorObject: JSON.stringify(error)
-    });
-    if (error.code === 'auth/id-token-expired') {
-      return res.status(401).json({ message: 'Authentication expired' });
-    } else if (error.code === 'auth/invalid-credential') {
-      return res.status(401).json({ message: 'Invalid authentication' });
-    }
-    return res.status(401).json({ message: 'Authentication failed' });
-  }
 }
 
 export function setupAuth(app: Express) {
@@ -190,8 +68,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Add Firebase token verification after session setup
-  app.use(verifyFirebaseToken);
 
   // Traditional login route
   app.post("/api/login", async (req, res) => {
