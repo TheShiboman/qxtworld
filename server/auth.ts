@@ -9,18 +9,25 @@ import { User as SelectUser } from "@shared/schema";
 import admin from 'firebase-admin';
 
 // Initialize Firebase Admin with proper error handling
-try {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-    })
-  });
-  console.log('Firebase Admin initialized successfully');
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
-  throw error; // This is critical, we need Firebase Admin to work
+if (!admin.apps.length) {
+  try {
+    // Clean up the private key string by ensuring proper line breaks
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY!
+      .replace(/\\n/g, '\n')
+      .replace(/\n/g, '\n');
+
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.VITE_FIREBASE_PROJECT_ID!,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+        privateKey: privateKey
+      })
+    });
+    console.log('Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('Firebase Admin initialization error:', error);
+    throw error;
+  }
 }
 
 declare global {
@@ -44,7 +51,7 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Update the verifyFirebaseToken middleware with more detailed logging
+// Verify Firebase token middleware
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   console.log('Verifying Firebase token, auth header present:', !!authHeader);
@@ -57,24 +64,6 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
   try {
     const token = authHeader.split('Bearer ')[1];
     console.log('Attempting to verify token of length:', token.length);
-
-    // Add error handling for Firebase Admin initialization
-    if (!admin.apps.length) {
-      console.error('Firebase Admin not initialized, attempting initialization...');
-      try {
-        admin.initializeApp({
-          credential: admin.credential.cert({
-            projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-          })
-        });
-        console.log('Firebase Admin initialized successfully');
-      } catch (initError) {
-        console.error('Firebase Admin initialization error:', initError);
-        return next();
-      }
-    }
 
     const decodedToken = await admin.auth().verifyIdToken(token);
     console.log('Token verified successfully for user:', decodedToken.email, 'uid:', decodedToken.uid);
@@ -90,21 +79,12 @@ async function verifyFirebaseToken(req: Request, res: Response, next: NextFuncti
       rating: 1500,
       createdAt: new Date()
     };
-    console.log('User object set from Firebase token:', { 
-      email: req.user.email, 
-      role: req.user.role 
-    });
     next();
   } catch (error) {
     console.error('Error verifying Firebase token:', error);
     if (error instanceof Error) {
-      if (error.message.includes('auth/id-token-expired')) {
-        console.log('Token expired, client should refresh');
-      } else if (error.message.includes('auth/invalid-credential')) {
-        console.error('Invalid credential configuration');
-      }
+      console.error('Verification error details:', error.message);
     }
-    // Don't send error to client, just continue to next middleware
     next();
   }
 }
