@@ -13,6 +13,7 @@ import { Link2, Globe, Shield, FileText, Headphones, MessageSquare } from "lucid
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { EditProfileDialog } from "@/components/edit-profile-dialog";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -42,18 +43,27 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8 text-[#C4A44E]">Profile Settings</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-[#C4A44E]">Profile Settings</h1>
+        <EditProfileDialog />
+      </div>
 
       <div className="space-y-6">
         {/* User Bio Section */}
         <Card className="border-[#C4A44E]/20 bg-[#062128] shadow-lg">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-[#C4A44E]">Player Profile</CardTitle>
-              <Badge variant="outline" className="bg-[#C4A44E]/10 text-[#C4A44E] border-[#C4A44E]/20">
-                <Shield className="h-4 w-4 mr-1" />
-                Verified Player
-              </Badge>
+            <div className="flex items-center gap-4">
+              {user.photoURL && (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || "Profile"}
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              )}
+              <div>
+                <CardTitle className="text-[#C4A44E]">{user.displayName || "Player Profile"}</CardTitle>
+                <p className="text-sm text-[#D4C28A]">{user.email}</p>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -71,14 +81,14 @@ export default function ProfilePage() {
                   <div className="grid sm:grid-cols-2 gap-4 mt-1">
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-[#C4A44E]" />
-                      <Input 
-                        placeholder="Website URL" 
+                      <Input
+                        placeholder="Website URL"
                         className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
                       />
                     </div>
                     <div className="flex items-center gap-2">
                       <Link2 className="h-4 w-4 text-[#C4A44E]" />
-                      <Input 
+                      <Input
                         placeholder="Social media link"
                         className="border-[#C4A44E] focus:border-[#D4C28A] focus:ring-[#C4A44E] focus:ring-opacity-50 bg-[#062128] transition-all duration-200"
                       />
@@ -343,7 +353,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {user.role === 'admin' && (
+        {user.role === "admin" && (
           <Card className="border-[#C4A44E]/20 bg-[#062128] shadow-lg">
             <CardHeader>
               <CardTitle className="text-[#C4A44E]">Administration</CardTitle>
