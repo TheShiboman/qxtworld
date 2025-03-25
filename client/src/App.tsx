@@ -26,17 +26,17 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/home" component={HomePage} />
-      <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/tournaments" component={TournamentPage} />
-      <ProtectedRoute path="/tournaments/:id/live-scoring" component={LiveScoring} />
-      <ProtectedRoute path="/training" component={TrainingPage} />
-      <ProtectedRoute path="/leaderboards" component={LeaderboardPage} />
-      <ProtectedRoute path="/community" component={CommunityPage} />
-      <ProtectedRoute path="/academy" component={AcademyPage} />
-      <ProtectedRoute path="/store" component={StorePage} />
-      <ProtectedRoute path="/live-streaming" component={LiveStreamingPage} />
+      <Route path="/dashboard" component={DashboardPage} />
+      <Route path="/home" component={HomePage} />
+      <Route path="/profile" component={ProfilePage} />
+      <Route path="/tournaments" component={TournamentPage} />
+      <Route path="/tournaments/:id/live-scoring" component={LiveScoring} />
+      <Route path="/training" component={TrainingPage} />
+      <Route path="/leaderboards" component={LeaderboardPage} />
+      <Route path="/community" component={CommunityPage} />
+      <Route path="/academy" component={AcademyPage} />
+      <Route path="/store" component={StorePage} />
+      <Route path="/live-streaming" component={LiveStreamingPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -47,9 +47,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen bg-background text-foreground">
-          {/* Only show navbar on protected routes */}
           <Switch>
-            <Route path="/" />
             <Route path="/auth" />
             <Route>
               <Navbar />
