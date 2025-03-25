@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { auth } from "@/lib/firebase";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -17,6 +16,7 @@ interface EditProfileFormData {
 }
 
 export function EditProfileDialog() {
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<EditProfileFormData>({
     displayName: auth.currentUser?.displayName || "",
@@ -76,20 +76,10 @@ export function EditProfileDialog() {
       // Upload image if selected
       let photoURL = formData.photoURL;
       if (imageFile) {
-        toast({
-          title: "Uploading",
-          description: "Uploading profile picture..."
-        });
-
         const storage = getStorage();
         const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
         await uploadBytes(imageRef, imageFile);
         photoURL = await getDownloadURL(imageRef);
-
-        toast({
-          title: "Success",
-          description: "Profile picture uploaded successfully"
-        });
       }
 
       // Update profile via API
@@ -98,6 +88,10 @@ export function EditProfileDialog() {
         bio: formData.bio,
         photoURL
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
 
       const updatedUser = await response.json();
 
@@ -114,6 +108,11 @@ export function EditProfileDialog() {
         title: "Profile updated",
         description: "Your profile has been successfully updated."
       });
+
+      // Reset form and close dialog
+      setIsOpen(false);
+      setImageFile(null);
+      setImagePreview(null);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
@@ -127,7 +126,7 @@ export function EditProfileDialog() {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full md:w-auto">
           Edit Profile
