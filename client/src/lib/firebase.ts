@@ -1,4 +1,4 @@
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, updateProfile } from "firebase/auth";
 import app from "./firebase-config";
 
 // Initialize Firebase Authentication and get a reference to the service
@@ -12,4 +12,5 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
+export { updateProfile };
 export default app;

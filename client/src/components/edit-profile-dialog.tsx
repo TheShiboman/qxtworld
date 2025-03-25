@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth } from "@/lib/firebase";
+import { auth, updateProfile } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 
 interface EditProfileFormData {
@@ -71,12 +71,12 @@ export function EditProfileDialog() {
       }
 
       // Update Firebase Auth profile
-      await auth.currentUser.updateProfile({
+      await updateProfile(auth.currentUser, {
         displayName: formData.displayName,
-        photoURL
+        photoURL: photoURL || null
       });
 
-      // Update query cache
+      // Update query cache with new profile data
       queryClient.setQueryData(["/api/user"], {
         ...auth.currentUser,
         displayName: formData.displayName,
@@ -146,13 +146,19 @@ export function EditProfileDialog() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Profile Picture</label>
             <div className="flex items-center gap-4">
-              {imagePreview && (
+              {imagePreview ? (
                 <img
                   src={imagePreview}
                   alt="Profile preview"
                   className="w-16 h-16 rounded-full object-cover"
                 />
-              )}
+              ) : formData.photoURL ? (
+                <img
+                  src={formData.photoURL}
+                  alt="Current profile"
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              ) : null}
               <Input
                 type="file"
                 accept="image/jpeg,image/png"
